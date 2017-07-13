@@ -1,0 +1,78 @@
+{
+    "pg_conf" : "dbname='mkiefer' host='localhost' port='5432'",
+    "compiler_options" : "-DNDEBUG -isystem /home/mkiefer/boost/include -L /home/mkiefer/boost/lib -lOpenCL -lnlopt", 
+    "compute_unit_factor" : 2048,
+    "query_descriptor" : {
+        "tables" : [
+            {
+                "tid" : "corr1",
+                "columns" : [
+                                {"cid" : "c1" , "type" : "point"},
+                                {"cid" : "c2" , "type" : "range"}
+                            ]
+            },
+            {
+                "tid" : "corr1_2",
+                "columns" : [
+                                {"cid" : "c1" , "type" : "point"},
+                                {"cid" : "c2" , "type" : "range"}
+                            ]
+            }
+        ],
+        "joins" : [[[0,0],[1,0]]]
+    },
+    "iterations" : 20,
+    "sizetype" : "relative",
+    "model_sizes" : [0.01],
+    "workload" : "mixed_distinct",
+    "generate_table_samples" : true,
+    "generate_correlated_table_samples" : true,
+    "generate_join_samples" : true,
+    "dump_tables" : true,  
+    "generate_table_training_queries" : 0,
+    "generate_table_test_queries" : 0,
+    "generate_join_training_queries" : 100,
+    "generate_join_test_queries" : 100,
+    "estimators" : [
+        {
+            "estimator" : "AGPUJKDE",
+            "join_kernel" : "Cont",
+            "objective" : "Q",
+            "kernels" : [["GaussPoint", "GaussRange"],["GaussPoint", "GaussRange"]],
+            "bw_optimization" : "join",
+            "look_behind" : false,
+            "limit_opt" : 120,
+            "test" : 100,
+            "training" : 100
+        },
+        {
+            "estimator" : "GPUKDE",
+            "objective" : "Q",
+            "kernels" : [["GaussPoint", "GaussRange"],["GaussPoint", "GaussRange"]],
+            "bw_optimization" : "join",
+            "look_behind" : false,
+            "test" : 100,
+            "training" : 100
+        },
+        {
+            "estimator" : "GPUSample",
+            "test" : 100
+        },
+        {
+            "estimator" : "GPUJoinSample",
+            "test" : 100
+        },
+        {
+            "estimator" : "GPUCorrelatedSample",
+            "test" : 100
+        },
+        {
+            "estimator" : "Postgres",
+            "test" : 100
+        },
+        {
+            "estimator" : "AGMS",
+            "test" : 100
+        }
+    ]        
+}
