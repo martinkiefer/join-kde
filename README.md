@@ -1,5 +1,5 @@
 # join-kde
-Proof of concept for join cardinality estimation using GPU-accelerated Kernel Density Estimator models. This repository contains all our experiment code for our estimators, baseline estimators, and datasets. We use code generation to create the estimators and their respective GPU.
+Proof of concept for join cardinality estimation using GPU-accelerated Kernel Density Estimator models. This repository contains all our experiment code for our estimators, baseline estimators, and datasets. We use code generation to create the estimator host code (C++) and device code (OpenCL)
 
 ## Requirements
 1. The GNU Compiler Collection (GCC) (gcc, g++).
