@@ -6,15 +6,16 @@ Proof of concept for join cardinality estimation using GPU-accelerated Kernel De
 2. A recent version of Postgres. We used Postgres 9.6.3.
 3. A recent version of the nlopt library. We used version 2.4.2.
 4. Python 2.7 and the following modules:
-..* scipy
-..* numpy
-..* psycopg2
+⋅⋅*  scipy
+⋅⋅*  numpy
+⋅⋅*  psycopg2
 5. A recent version of the boost C++ library. We used version 1.64.0.
 6. A GPU that supports OpenCL and an according OpenCL SDK. An OpenCL-capable CPU and an according OpenCL SDK will do as well, but note that our code is designed for GPUs.
 
 ## Setup
 1. Create an initial database folder and an initial database using the initdb and the createdb command.
 2. Use the psql command to load our experimental data into the database.
+
 zcat dump.gz | psql
 
 ## Running Experiments
