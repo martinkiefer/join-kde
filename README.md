@@ -41,23 +41,23 @@ compiler_options: String, Commandline parameters for g++. Make sure the compiler
 compute_unit_factor: int, Controls the oversubscription per compute unit for OpenCL. The current value is fine for GPUs, but can be set to 64 for CPUs. Note that our code is not optimized for CPUs, though.
 
 ### Global Experiment Parameters
-iterations, int: Number of times the experiment is repeated with different samples, queries, seeds etc.
-size_type, String: "relative" or "absolute". Controls whether the model size parameters are given relative to base table sizes or absolute (Bytes).
-model_size, List: List of numeric types. Specify all model sizes you want to evaluate per iteration.
-workload, String: "mixed_distinct" or "mixed_uniform" switches between the distinct and the uniform workload.
-genertate_table_samples, boolean: Do we need uniform table samples for the experiment? 
-generate_correlated_samples, boolean: Do we need correlated table samples for the experiment? 
-generate_join_samples, boolean: Do we need uniform join samples for this experiment?
-dump_tables, boolean: Do we need table dumps for this experiment (AGMS)?
-generate_join_training_queries, int: Number of training queries.
-generate_join_test_queries, int: Number of test queries.
-generate_table_*_queries, int: Set to zero. Deprecated.
+*iterations, int:* Number of times the experiment is repeated with different samples, queries, seeds etc.
+*size_type, String:* "relative" or "absolute". Controls whether the model size parameters are given relative to base table sizes or absolute (Bytes).
+*model_size, List:* List of numeric types. Specify all model sizes you want to evaluate per iteration.
+*workload, String:* "mixed_distinct" or "mixed_uniform" switches between the distinct and the uniform workload.
+*genertate_table_samples, boolean:* Do we need uniform table samples for the experiment? 
+*generate_correlated_samples, boolean:* Do we need correlated table samples for the experiment? 
+*generate_join_samples, boolean:* Do we need uniform join samples for this experiment?
+*dump_tables, boolean:* Do we need table dumps for this experiment (AGMS)?
+*generate_join_training_queries, int:* Number of training queries.
+*generate_join_test_queries, int:* Number of test queries.
+*generate_table_*_queries, int:* Set to zero. Deprecated.
 
 ### The query_descriptor object
-The query descriptor contains all the information to describe the involved tables, joins and base table selections. Looking at the examples in the experiment_descriptors folder this should be self-explanatory.
+The query descriptor contains all the information to describe the involved tables, joins and base table selections. Looking at the examples in the experiment_descriptors folder this should be self-explanatory to the largest extent.
 
-tables, List of table descriptors: Table descriptors for all involved tables.
-table_descriptor: Contains all the information for a table. Includes the name (tid) as well as a list of column descriptor (columns).
-column_descriptor: Contains all the information on a column. Includes the column name (cid) and the type of predicate for the column (type: point, range). Choose "point" for join attributes.
+*tables, List of table descriptors:* Table descriptors for all involved tables.
+*table_descriptor:* Contains all the information for a table. Includes the name (tid) as well as a list of column descriptor (columns).
+*column_descriptor:* Contains all the information on a column. Includes the column name (cid) and the type of predicate for the column (type: point, range). Choose "point" for join attributes.
 
-joins, list of lists of [table_offset, column_offset] pairs: Describes the joins between the tables. Every join equivalence class is a sublist. Each of these sublists contains two or more [table_offset, column_offset]. table_offset and column_offset are given as the offset in the tables and columns lists.
+*joins, list of lists of [table_offset, column_offset] pairs:* Describes the joins between the tables. Every join equivalence class is a sublist. Each of these sublists contains two or more [table_offset, column_offset]. table_offset and column_offset are given as the offset in the tables and columns lists.
