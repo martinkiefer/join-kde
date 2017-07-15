@@ -61,7 +61,7 @@ compute_unit_factor: int, Controls the oversubscription per compute unit for Ope
 
 *generate_join_test_queries, int:* Number of test queries.
 
-*generate_table_*_queries, int:* Set to zero. Deprecated.
+*generate_table_X_queries, int:* Set to zero. Deprecated.
 
 ### The query_descriptor object
 The query descriptor contains all the information to describe the involved tables, joins and base table selections. Looking at the examples in the experiment_descriptors folder this should be self-explanatory to the largest extent.
