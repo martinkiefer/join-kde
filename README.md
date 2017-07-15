@@ -88,7 +88,7 @@ Common attributes are:
 
 Attributes for GPUKDE, AGPUJKDE:
 
-*objective, string: "Q" for the multiplicative error. "squared" is deprecated.
+*objective, string:* "Q" for the multiplicative error. "squared" is deprecated.
 
 *bw_optimization, String:* "join" is the only supported training method right now.
 
@@ -99,3 +99,5 @@ Attributes for GPUKDE, AGPUJKDE:
 *test, Integer:* Number of test queries for this estimator.
 
 *look_behind, boolean:* False. Deprecated.
+
+*kernels, list of lists of strings:* Specifies the kernels for table and attributes in order of appearance in the query descriptor. Every table is a sublist. Possible values are "GaussPoint" for attributes with "point" attributes in the query descriptor and "GaussRange" for "range" attributes in the query descriptor.
