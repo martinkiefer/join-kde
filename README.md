@@ -63,7 +63,7 @@ compute_unit_factor: int, Controls the oversubscription per compute unit for Ope
 
 *generate_table_X_queries, int:* Set to zero. Deprecated.
 
-### The query_descriptor object
+### The query_descriptor Object
 The query descriptor contains all the information to describe the involved tables, joins and base table selections. Looking at the examples in the experiment_descriptors folder this should be self-explanatory to the largest extent.
 
 *tables, List of table descriptors:* Table descriptors for all involved tables.
@@ -73,3 +73,29 @@ The query descriptor contains all the information to describe the involved table
 *column_descriptor:* Contains all the information on a column. Includes the column name (cid) and the type of predicate for the column (type: point, range). Choose "point" for join attributes.
 
 *joins, list of lists of [table_offset, column_offset] pairs:* Describes the joins between the tables. Every join equivalence class is a sublist. Each of these sublists contains two or more [table_offset, column_offset]. table_offset and column_offset are given as the offset in the tables and columns lists.
+
+
+### The Estimators List
+*estimators, list of estimator objects*: All the estimators that are evaluated in this experiment.
+
+
+Common attributes are:
+
+*estimator, String:* Name of the estimator. Possible values: AGPUJKDE (also known as TS+KDE), GPUKDE (JS+KDE), GPUSample (TS), GPUJoinSample (JS), AGMS, GPUCorrelatedSample (Correlated Sampling), Postgres
+
+*test, Integer:* Number of training queries for this estimator. Should have the same value for all esitmators. Should be less or equal than generate_join_test_queries.
+
+
+Attributes for GPUKDE, AGPUJKDE:
+
+*objective, string: "Q" for the multiplicative error. "squared" is deprecated.
+
+*bw_optimization, String:* "join" is the only supported training method right now.
+
+*join_kernel, String:* "Cont" is the only supported join kernel right now (AGPUKDE only)
+
+*limit_opt, int:* Timeout in minutes for the bandwidth optimization performed by nlopt (AGPUJKDE only)
+
+*test, Integer:* Number of test queries for this estimator.
+
+*look_behind, boolean:* False. Deprecated.
