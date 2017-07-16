@@ -14,7 +14,8 @@ Proof of concept for join cardinality estimation using GPU-accelerated Kernel De
 
 ## Setup
 1. Create an initial database folder and an initial database using the initdb and the createdb command.
-2. Use the psql command to load our experimental data into the database.
+2. Download the dump containing our datasets from here: COMING SOON
+3. Use the psql command to load our experimental data into the database.
 
 zcat dump.gz | psql
 
