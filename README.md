@@ -31,6 +31,11 @@ Note that you have to change the variables pg_conf and compiler_options in the e
 
 The code will execute the experiment on the default OpenCL device. If you want to use a different device, you can use the environment variables BOOST_COMPUTE_DEFAULT_DEVICE (device name) or BOOST_COMPUTE_DEFAULT_DEVICE_TYPE (GPU, CPU).
 
+Note that a large experiment can take a while, so be sure to run the experiment using nohup or in a tmux session.
+
+After the experiment is finished, the estimation results for every test query and every iteration are located in CSV files with the suffix .results. They have the following format:
+iteration, model_size, estimated cardinality, true cardinality, squared error, absolute error, relative error, Q error, execution time in nanoseconds
+
 
 ## Experiment Descriptors
 The experiment descriptors define an entire experiment, the most important variables to use or adjust our experiments are:
@@ -102,5 +107,5 @@ Attributes for GPUKDE, AGPUJKDE:
 
 *kernels, list of lists of strings:* Specifies the kernels for table and attributes in order of appearance in the query descriptor. Every table is a sublist. Possible values are "GaussPoint" for attributes with "point" attributes in the query descriptor and "GaussRange" for "range" attributes in the query descriptor.
 
-# Experiment Visualization
+## Experiment Visualization
 Coming soon
