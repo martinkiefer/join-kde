@@ -102,5 +102,5 @@ Attributes for GPUKDE, AGPUJKDE:
 
 *kernels, list of lists of strings:* Specifies the kernels for table and attributes in order of appearance in the query descriptor. Every table is a sublist. Possible values are "GaussPoint" for attributes with "point" attributes in the query descriptor and "GaussRange" for "range" attributes in the query descriptor.
 
-#Experiment Visualization
+# Experiment Visualization
 Coming soon
