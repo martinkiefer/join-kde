@@ -34,6 +34,7 @@ The code will execute the experiment on the default OpenCL device. If you want t
 Note that a large experiment can take a while, so be sure to run the experiment using nohup or in a tmux session.
 
 After the experiment is finished, the estimation results for every test query and every iteration are located in CSV files with the suffix .results. They have the following format:
+
 iteration, model_size, estimated cardinality, true cardinality, squared error, absolute error, relative error, Q error, execution time in nanoseconds
 
 
