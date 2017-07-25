@@ -18,7 +18,7 @@ Proof of concept for join cardinality estimation using GPU-accelerated Kernel De
 2. Download the dump containing our datasets from here: http://www.user.tu-berlin.de/mkiefer/dump2.gz
 3. Use the psql command to load our experimental data into the database.
 
-zcat dump.gz | psql
+zcat dump2.gz | psql
 
 ## Running Experiments
 Our experiments are centered around the concept of experiment descriptors. These query descriptors are JSON files that define the entire experiment. The query descriptors for our experiments are located in the folder experiment_descriptor. 
