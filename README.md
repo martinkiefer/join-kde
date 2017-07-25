@@ -14,7 +14,7 @@ Proof of concept for join cardinality estimation using GPU-accelerated Kernel De
 
 ## Setup
 1. Create an initial database folder and an initial database using the initdb and the createdb command.
-2. Download the dump containing our datasets from here: http://www.user.tu-berlin.de/mkiefer/dump.gz
+2. Download the dump containing our datasets from here: http://www.user.tu-berlin.de/mkiefer/dump2.gz
 3. Use the psql command to load our experimental data into the database.
 
 zcat dump.gz | psql
@@ -43,9 +43,11 @@ iteration, model_size, estimated cardinality, true cardinality, squared error, a
 The experiment descriptors define an entire experiment, the most important variables to use or adjust our experiments are:
 
 ### System Parameters
-pg_conf: String, Contains the connection information for your Postgres instance. Passed to Psycopg2.
-compiler_options: String, Commandline parameters for g++. Make sure the compiler has all necessary flags to use nlopt, OpenCL and Boost.
-compute_unit_factor: int, Controls the oversubscription per compute unit for OpenCL. The current value is fine for GPUs, but can be set to 64 for CPUs. Note that our code is not optimized for CPUs, though.
+*pg_conf*: String, Contains the connection information for your Postgres instance. Passed to Psycopg2.
+
+*compiler_options, String:* Commandline parameters for g++. Make sure the compiler has all necessary flags to use nlopt, OpenCL and Boost.
+
+*compute_unit_factor, int* Controls the oversubscription per compute unit for OpenCL. The current value is fine for GPUs, but can be set to 64 for CPUs. Note that our code is not optimized for CPUs, though.
 
 ### Global Experiment Parameters
 *iterations, int:* Number of times the experiment is repeated with different samples, queries, seeds etc.
