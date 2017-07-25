@@ -1,0 +1,8 @@
+plot \
+'./KernelGenerator/5_Postgres.results' using (1.0):8:(0.47) title 'Postgres', \
+'./KernelGenerator/6_AGMS.results' using (2.0):8:(0.47) title 'AGMS', \
+'./KernelGenerator/2_GPUS.results' using (3.0):8:(0.47) title 'Table Sample', \
+'./KernelGenerator/4_GPUCS.results' using (4.0):8:(0.47) title 'Correlated Sample', \
+'./KernelGenerator/3_GPUJS.results' using (5.0):8:(0.47) title 'Join Sample', \
+'./KernelGenerator/0_AGPUJKDE.results' using (7.0):8:(0.47) title 'Table Sample + KDE', \
+'./KernelGenerator/1_GPUKDE.results' using (8.0):8:(0.47) title 'Join Sample + KDE'

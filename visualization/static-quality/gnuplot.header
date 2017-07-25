@@ -1,0 +1,18 @@
+set terminal pdf enhanced size 7,6.99 font 'Helvetica-Bold, 32'
+set style data boxplot
+set style boxplot nooutlier
+set style fill solid 0.75 border lt -1
+
+set datafile separator ","
+set grid ytics
+set logscale y
+unset key
+set format y "%.0e" 
+set xtics format ""
+set xtics 1
+set rmargin 1
+set lmargin 7
+
+set xtics ("Postgres" 1.0, "AGMS" 2.0, "Table Sample (TS)" 3.0, "Correlated Sample" 4.0, "Join Sample (JS)" 5.0, "TS+KDE" 7.0, "JS+KDE" 8.0, ) rotate by 45 right
+
+
