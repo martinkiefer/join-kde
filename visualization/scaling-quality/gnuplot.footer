@@ -1,0 +1,8 @@
+plot \
+'./code/2_GPUS.results.group.results' using 1:($8) title 'Table Sample (TS)' ls 5, \
+'./code/3_GPUJS.results.group.results' using 1:($8) title 'Join Sample (JS)' ls 7 lc 'pink',\
+'./code/4_GPUCS.results.group.results' using 1:($8) title 'Correlated Sample' ls 4, \
+'./code/6_AGMS.results.group.results' using 1:($8) title 'AGMS' ls 2, \
+'./code/0_AGPUJKDE.results.group.results' using 1:($8) title 'TS+KDE' ls 1, \
+'./code/1_GPUKDE.results.group.results' using 1:($8) title 'JS+KDE' ls 8, \
+%s title 'Postgres' ls 8
