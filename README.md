@@ -11,6 +11,7 @@ Proof of concept for join cardinality estimation using GPU-accelerated Kernel De
   *  psycopg2
 5. A recent version of the boost C++ library. We used version 1.64.0.
 6. A GPU that supports OpenCL and an according OpenCL SDK. An OpenCL-capable CPU and an according OpenCL SDK will do as well, but note that our code is designed for GPUs.
+7. A recent version of gnuplot is required to create experiment plots. We used version 5.0 (Patchlevel 6).
 
 ## Setup
 1. Create an initial database folder and an initial database using the initdb and the createdb command.
@@ -112,4 +113,12 @@ Attributes for GPUKDE, AGPUJKDE:
 *kernels, list of lists of strings:* Specifies the kernels for table and attributes in order of appearance in the query descriptor. Every table is a sublist. Possible values are "GaussPoint" for attributes with "point" attributes in the query descriptor and "GaussRange" for "range" attributes in the query descriptor.
 
 ## Experiment Visualization
-Coming soon
+We provide scripts to visualize the experiments as well. The folder visualization contains a set of scripts for estiation quality experiments with statitc model size (static-quality), estimation quality experiments with varying model size (scaling-quality), and runtime experiments with varying model size (scaling-runtime).
+
+The code folder needs to be copied or sym-linked into the corresponing directory. For example, to visualize a static quality experiment perform the following steps:
+
+1. Copy or symlink the code folder to static-quality/static
+2. Execute the plot.sh script while being in the static-quality directory.
+3. The plot can be found in static-quality/static.pdf
+
+You can also create multiple plots at once by creating copies of the static folder for each experiment and copying the respective code folder to these directories. The plot will have the same name as the containing directory.
