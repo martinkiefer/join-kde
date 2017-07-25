@@ -3,14 +3,11 @@ import JoinSampleCodeGenerator
 import SampleCodeGenerator
 import CorrelatedSampleCodeGenerator
 import AggressiveKDECodeGenerator
-import CountAggressiveKDECodeGenerator
 import numpy as np
 import os.path
 import UniformJoinQueryGenerator as ujqg
 import MixedJoinQueryGenerator as mjqg
-import DistinctJoinQueryGenerator as djqg
 import UniformTableQueryGenerator as utqg
-import DistinctTableQueryGenerator as dtqg
 import TableSampleGenerator as tsg
 import CorrelatedTableSampleGenerator as ctsg
 import JoinSampleGenerator as jsg
