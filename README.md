@@ -117,7 +117,7 @@ We provide scripts to visualize the experiments as well. The folder visualizatio
 
 The code folder needs to be copied or sym-linked into the corresponing directory. For example, to visualize a static quality experiment perform the following steps:
 
-1. Copy or symlink the code folder to static-quality/static
+1. Copy or symlink the code folder to static-quality/static/code
 2. Execute the plot.sh script while being in the static-quality directory.
 3. The plot can be found in static-quality/static.pdf
 
