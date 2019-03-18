@@ -397,7 +397,7 @@ def generateGPUJKDEGlobalTraining(cf,query,estimator):
     #The categorical kernel needs global optimization urgently
     if estimator.join_kernel == "Cat":
         print >>cf, """
-        nlopt_opt gopt = nlopt_create(NLOPT_GD_MLSL,%s);
+        nlopt_opt gopt = nlopt_create(NLOPT_GN_MLSL,%s);
         nlopt_set_lower_bounds(gopt,lb);
         nlopt_set_upper_bounds(gopt,ub);
         nlopt_set_min_objective(gopt,obj,&p);
