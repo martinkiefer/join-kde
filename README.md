@@ -1,5 +1,5 @@
 # join-kde
-Proof of concept for join cardinality estimation using GPU-accelerated Kernel Density Estimator models. This repository contains all our experiment code for our estimators, baseline estimators, and datasets. We use code generation to create the estimator host code (C++) and device code (OpenCL)
+Proof of concept for join cardinality estimation using GPU-accelerated Kernel Density Estimator models. This repository contains all our experiment code for our estimators, baseline estimators, and datasets. We use code generation to create the estimator host code (C++) and device code (OpenCL).
 
 ## Requirements
 1. The GNU Compiler Collection (GCC) (gcc, g++).
@@ -12,6 +12,7 @@ Proof of concept for join cardinality estimation using GPU-accelerated Kernel De
 5. A recent version of the boost C++ library. We used version 1.64.0.
 6. A GPU that supports OpenCL and an according OpenCL SDK. An OpenCL-capable CPU and an according OpenCL SDK will do as well, but note that our code is designed for GPUs.
 7. A recent version of gnuplot is required to create experiment plots. We used version 5.0 (Patchlevel 6).
+8. A Linux-based operating system. While the code may compile using OSX as well, the Apple OpenCL SDK is buggy and will lead to incorrect results.
 
 ## Setup
 1. Create an initial database folder and an initial database using the initdb and the createdb command.
