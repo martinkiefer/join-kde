@@ -3,9 +3,9 @@ import Utils
 from Utils import generateRoundMethod
 
 def generatePreamble(f):
-    print >>f, "#pragma OPENCL EXTENSION cl_khr_fp64 : enable "
-    print >>f, "typedef double T;"
-    print >>f, """
+    print("#pragma OPENCL EXTENSION cl_khr_fp64 : enable ", file=f)
+    print("typedef double T;", file=f)
+    print("""
 int parity(unsigned int x) {
    unsigned int y;
    y = x ^ (x >> 1);
@@ -37,10 +37,10 @@ int range_ech3(unsigned int u, unsigned int l, unsigned int seed, int sbit){
     for(unsigned int i = l; i <= u; i++) ctr +=ech3(i, seed, sbit);
     return ctr;
 }
-    """
+    """, file=f)
     
 def generateCIncludes(f):
-    print >>f, """
+    print("""
     
 #include <iostream>
 #include <string>
@@ -59,241 +59,241 @@ def generateCIncludes(f):
 #include <boost/random/uniform_int_distribution.hpp>
 
 namespace compute = boost::compute;
-"""
+""", file=f)
 
 def generateParameterArray(f,query,estimator):
     cols = Utils.generateInvariantColumns(query)
     jpairs = Utils.generateJoinPairs(query)
-    print >>f, """
+    print("""
 typedef struct{
     compute::command_queue queue;
     compute::context ctx;
-"""
-    print >>f, "    unsigned int iteration;"
-    print >>f, "    size_t skn;"
+""", file=f)
+    print("    unsigned int iteration;", file=f)
+    print("    size_t skn;", file=f)
     for j,t in enumerate(query.tables):
-        print >>f, "    compute::vector<long> sk_t%s;" % (j) 
-        print >>f, "    unsigned int ts%s;" % (j) 
-        print >>f, "    compute::kernel t%s_construct_sketch;" % j
+        print("    compute::vector<long> sk_t%s;" % (j), file=f) 
+        print("    unsigned int ts%s;" % (j), file=f) 
+        print("    compute::kernel t%s_construct_sketch;" % j, file=f)
         for k,c in enumerate(t.columns):
-            print >>f, "    compute::vector<unsigned int> t%s_c%s;" % (j,k)
-            print >>f, "    compute::vector<unsigned int> t%s_c%s_lseed;" % (j,k)
-            print >>f, "    compute::vector<unsigned int> t%s_c%s_sseed;" % (j,k)
-        print >>f
+            print("    compute::vector<unsigned int> t%s_c%s;" % (j,k), file=f)
+            print("    compute::vector<unsigned int> t%s_c%s_lseed;" % (j,k), file=f)
+            print("    compute::vector<unsigned int> t%s_c%s_sseed;" % (j,k), file=f)
+        print(file=f)
         
     for j,p1,p2 in jpairs:
-        print >>f, "    compute::vector<unsigned int> j%s_t%s_c%s_t%s_c%s_lseed;" % (j,p1[0],p1[1],p2[0],p2[1])
-        print >>f, "    compute::vector<unsigned int> j%s_t%s_c%s_t%s_c%s_sseed;" % (j,p1[0],p1[1],p2[0],p2[1])
-    print >>f, "    compute::kernel multiply_sketches;"
+        print("    compute::vector<unsigned int> j%s_t%s_c%s_t%s_c%s_lseed;" % (j,p1[0],p1[1],p2[0],p2[1]), file=f)
+        print("    compute::vector<unsigned int> j%s_t%s_c%s_t%s_c%s_sseed;" % (j,p1[0],p1[1],p2[0],p2[1]), file=f)
+    print("    compute::kernel multiply_sketches;", file=f)
     
     #Training
-    print >>f, "    compute::vector<double> estimates;"
+    print("    compute::vector<double> estimates;", file=f)
     for i,indices in enumerate(cols):
     #Start with computing the invariant contributions   
         for j in indices:
             if query.tables[i].columns[j].type == "point":
-                print >>f, "    unsigned int* j_p_t%s_c%s;" % (i,j)
+                print("    unsigned int* j_p_t%s_c%s;" % (i,j), file=f)
             elif query.tables[i].columns[j].type == "range":
-                print >>f, "    unsigned int* j_u_t%s_c%s;" % (i,j)
-                print >>f, "    unsigned int* j_l_t%s_c%s;" % (i,j)
+                print("    unsigned int* j_u_t%s_c%s;" % (i,j), file=f)
+                print("    unsigned int* j_l_t%s_c%s;" % (i,j), file=f)
             else:
                 raise Exception("Unknown column type.")
 
-    print >>f, "    unsigned int* j_test_cardinality;"                
-    print >>f, """
+    print("    unsigned int* j_test_cardinality;", file=f)                
+    print("""
 } parameters;
-"""   
+""", file=f)   
 
 def generateSketchConstructionCCode(f,query,ts,local_size=64,cu_factor=2048):
     icols = Utils.generateInvariantColumns(query) 
     jpairs = Utils.generateJoinPairs(query)
     
-    print >>f, "void sketch_contruction(parameters* p){"
-    print >>f, "    size_t local = %s;" % local_size 
-    print >>f, "    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*%s , ((p->skn-1)/local+1)*local);" % cu_factor
+    print("void sketch_contruction(parameters* p){", file=f)
+    print("    size_t local = %s;" % local_size, file=f) 
+    print("    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*%s , ((p->skn-1)/local+1)*local);" % cu_factor, file=f)
     for tid, tab in enumerate(query.tables):
-        cs = ",".join(map(lambda x : "p->t%s_c%s" % (tid,x),range(0,len(tab.columns))))            
-        cseeds = ",".join(map(lambda x : "p->t%s_c%s_lseed, p->t%s_c%s_sseed" % (tid,x,tid,x), icols[tid]))
-        jseeds = ",".join(map(lambda y : "p->j%s_t%s_c%s_t%s_c%s_lseed, p->j%s_t%s_c%s_t%s_c%s_sseed" % (y[0],y[1][0],y[1][1],y[2][0],y[2][1],y[0],y[1][0],y[1][1],y[2][0],y[2][1]) ,filter(lambda x : x[1][0] == tid or x[2][0] == tid,jpairs)))
+        cs = ",".join(["p->t%s_c%s" % (tid,x) for x in range(0,len(tab.columns))])            
+        cseeds = ",".join(["p->t%s_c%s_lseed, p->t%s_c%s_sseed" % (tid,x,tid,x) for x in icols[tid]])
+        jseeds = ",".join(["p->j%s_t%s_c%s_t%s_c%s_lseed, p->j%s_t%s_c%s_t%s_c%s_sseed" % (y[0],y[1][0],y[1][1],y[2][0],y[2][1],y[0],y[1][0],y[1][1],y[2][0],y[2][1]) for y in [x for x in jpairs if x[1][0] == tid or x[2][0] == tid]])
         
 
-        print >>f, "    p->t%s_construct_sketch.set_args((unsigned int) p->skn,%s,%s,%s,p->sk_t%s);" % (tid,cs,cseeds,jseeds,tid)
-        print >>f, "    boost::compute::event ev%s = p->queue.enqueue_nd_range_kernel(p->t%s_construct_sketch,1,NULL,&global,&local);" % (tid,tid)
+        print("    p->t%s_construct_sketch.set_args((unsigned int) p->skn,%s,%s,%s,p->sk_t%s);" % (tid,cs,cseeds,jseeds,tid), file=f)
+        print("    boost::compute::event ev%s = p->queue.enqueue_nd_range_kernel(p->t%s_construct_sketch,1,NULL,&global,&local);" % (tid,tid), file=f)
     
     for tid, tab in enumerate(query.tables):   
-        print >>f, "    ev%s.wait();" % tid
-    print >>f, "}"
+        print("    ev%s.wait();" % tid, file=f)
+    print("}", file=f)
     
 def generateEstimateCCode(f,query,cu_factor=2048):
     icols = Utils.generateInvariantColumns(query) 
     jpairs = Utils.generateJoinPairs(query)
     
-    print >>f, "double estimate(parameters* p",
+    print("double estimate(parameters* p", end=' ', file=f)
     for i,col in enumerate(icols):
         for j in col:
             if query.tables[i].columns[j].type == "point":
-                print >>f, ", unsigned int t%s_c%s" % (i,j),                 
+                print(", unsigned int t%s_c%s" % (i,j), end=' ', file=f)                 
             elif query.tables[i].columns[j].type == "range":
-                print >>f, ", unsigned int u_t%s_c%s, unsigned int l_t%s_c%s" % (i,j,i,j),                 
+                print(", unsigned int u_t%s_c%s, unsigned int l_t%s_c%s" % (i,j,i,j), end=' ', file=f)                 
             else:
                 raise Exception("unknown column type.")
 
-    print >>f, "){"
+    print("){", file=f)
     #Aaaaaaaaaand construct the estimation kernel
-    print >>f, "    size_t local = 64;"
-    print >>f, "    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*2048 , ((p->skn-1)/local+1)*local);"
-    print >>f, "    p->multiply_sketches.set_args(",
+    print("    size_t local = 64;", file=f)
+    print("    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*2048 , ((p->skn-1)/local+1)*local);", file=f)
+    print("    p->multiply_sketches.set_args(", end=' ', file=f)
     for tid, tab in enumerate(query.tables):
-        print >>f, "p->sk_t%s, " % tid,
+        print("p->sk_t%s, " % tid, end=' ', file=f)
     for i,col in enumerate(icols):
         for j in col:
             if query.tables[i].columns[j].type == "point":
-                print >>f, "t%s_c%s, p->t%s_c%s_lseed, p->t%s_c%s_sseed," % (i,j,i,j,i,j),    
+                print("t%s_c%s, p->t%s_c%s_lseed, p->t%s_c%s_sseed," % (i,j,i,j,i,j), end=' ', file=f)    
             elif query.tables[i].columns[j].type == "range":
-                print >>f, "u_t%s_c%s, l_t%s_c%s, p->t%s_c%s_lseed, p->t%s_c%s_sseed," % (i,j,i,j,i,j,i,j),    
+                print("u_t%s_c%s, l_t%s_c%s, p->t%s_c%s_lseed, p->t%s_c%s_sseed," % (i,j,i,j,i,j,i,j), end=' ', file=f)    
             else:
                 raise Exception("unknown column type.")
 
-    print >>f, "p->estimates, (unsigned int) p->skn);"
-    print >>f, "    boost::compute::event ev = p->queue.enqueue_nd_range_kernel(p->multiply_sketches, 1, NULL, &global, &local);"
-    print >>f, "    ev.wait();"
-    print >>f, "    double est = 0.0;"
-    print >>f, "    boost::compute::reduce(p->estimates.begin(), p->estimates.end(), &est, p->queue);"
-    print >>f, "    p->queue.finish();"
-    print >>f, "    return est / p->skn;"    
-    print >>f, "}"    
+    print("p->estimates, (unsigned int) p->skn);", file=f)
+    print("    boost::compute::event ev = p->queue.enqueue_nd_range_kernel(p->multiply_sketches, 1, NULL, &global, &local);", file=f)
+    print("    ev.wait();", file=f)
+    print("    double est = 0.0;", file=f)
+    print("    boost::compute::reduce(p->estimates.begin(), p->estimates.end(), &est, p->queue);", file=f)
+    print("    p->queue.finish();", file=f)
+    print("    return est / p->skn;", file=f)    
+    print("}", file=f)    
     
 def generateTestWrapper(f,query,estimator):
     cols = Utils.generateInvariantColumns(query)
     #print >>f, "double join_test(unsigned n, const double* bw, double* grad, void* f_data){"
-    print >>f, "double join_test(parameters* p){"    
+    print("double join_test(parameters* p){", file=f)    
     #print >>f, "    parameters* p = (parameters*) f_data;"
-    print >>f, "    double objective = 0.0;"
-    print >>f, "    double trues = 0.0;"
-    print >>f, "    double est = 0.0;"
-    print >>f, "    int first = 1;"
-    print >>f, "    for(unsigned int i = 0; i < %s; i++){" % estimator.test
-    print >>f, "        auto begin = std::chrono::high_resolution_clock::now();"
-    print >>f, "        if(first ",
+    print("    double objective = 0.0;", file=f)
+    print("    double trues = 0.0;", file=f)
+    print("    double est = 0.0;", file=f)
+    print("    int first = 1;", file=f)
+    print("    for(unsigned int i = 0; i < %s; i++){" % estimator.test, file=f)
+    print("        auto begin = std::chrono::high_resolution_clock::now();", file=f)
+    print("        if(first ", end=' ', file=f)
     for i,indices in enumerate(cols):
     #Start with computing the invariant contributions
         if len(indices) != 0:
             for j in indices:
                 if query.tables[i].columns[j].type == "point":
-                    print >>f, "|| p->j_p_t%s_c%s[i] != p->j_p_t%s_c%s[i-1] " % (i,j,i,j),
+                    print("|| p->j_p_t%s_c%s[i] != p->j_p_t%s_c%s[i-1] " % (i,j,i,j), end=' ', file=f)
                 elif query.tables[i].columns[j].type == "range":
-                    print >>f, "|| p->j_u_t%s_c%s[i] != p->j_u_t%s_c%s[i-1] " % (i,j,i,j),
-                    print >>f, "|| p->j_l_t%s_c%s[i] != p->j_l_t%s_c%s[i-1] " % (i,j,i,j),
+                    print("|| p->j_u_t%s_c%s[i] != p->j_u_t%s_c%s[i-1] " % (i,j,i,j), end=' ', file=f)
+                    print("|| p->j_l_t%s_c%s[i] != p->j_l_t%s_c%s[i-1] " % (i,j,i,j), end=' ', file=f)
                 else:
                     raise Exception("Unknown column type.")
-    print >>f, "){"
+    print("){", file=f)
     if hasattr(estimator, 'look_behind'):
         if estimator.look_behind:
-            print >> f, "            first = 0;"
+            print("            first = 0;", file=f)
     else:
-        print >>f, "            first = 0;"
-    print >>f, "            est = estimate(p",
+        print("            first = 0;", file=f)
+    print("            est = estimate(p", end=' ', file=f)
                                                             
     for i,indices in enumerate(cols):
         for j in indices:
             if query.tables[i].columns[j].type == "point":
-                print >>f, ", p->j_p_t%s_c%s[i]" % (i,j), 
+                print(", p->j_p_t%s_c%s[i]" % (i,j), end=' ', file=f) 
             elif query.tables[i].columns[j].type == "range":
-                print >>f, ", p->j_u_t%s_c%s[i]" % (i,j), 
-                print >>f, ", p->j_l_t%s_c%s[i]" % (i,j), 
+                print(", p->j_u_t%s_c%s[i]" % (i,j), end=' ', file=f) 
+                print(", p->j_l_t%s_c%s[i]" % (i,j), end=' ', file=f) 
             else:
                 raise Exception("Unkown column type.")
-    print >>f, ");"
-    print >>f, "        }"
-    print >>f, "        auto end = std::chrono::high_resolution_clock::now();"
-    print >>f, "        trues = p->j_test_cardinality[i];"
-    print >>f, "        objective += (est-trues)*(est-trues);" 
+    print(");", file=f)
+    print("        }", file=f)
+    print("        auto end = std::chrono::high_resolution_clock::now();", file=f)
+    print("        trues = p->j_test_cardinality[i];", file=f)
+    print("        objective += (est-trues)*(est-trues);", file=f) 
     Utils.printObjectiveLine(f,"p->skn")
-    print >>f, "    }"
-    print >>f, "    return objective/%s;" % estimator.test
-    print >>f, "}"
+    print("    }", file=f)
+    print("    return objective/%s;" % estimator.test, file=f)
+    print("}", file=f)
 
 def generateSketchConstructionCode(f,query,ts,local_size=32):
     icols = Utils.generateInvariantColumns(query)    
     for tid,tab in enumerate(query.tables):
         pairs = Utils.generateJoinPairs(query,tid)
-        print >>f, "__kernel void t%s_construct_sketch(" % tid
+        print("__kernel void t%s_construct_sketch(" % tid, file=f)
         #Get column buffers
-        print >> f, "    unsigned int skn,"
+        print("    unsigned int skn,", file=f)
         for cid, cols in enumerate(tab.columns):
-            print >>f, "    __global unsigned int* c%s," % cid
+            print("    __global unsigned int* c%s," % cid, file=f)
         #Get seeds for invariant columns
         for cid in icols[tid]:
-            print >>f, "    __global unsigned int* c%s_ls, __global unsigned int* c%s_ss," % (cid,cid)
+            print("    __global unsigned int* c%s_ls, __global unsigned int* c%s_ss," % (cid,cid), file=f)
         for j,p1,p2 in pairs:
-            print >>f, "    __global unsigned int* j%s_ls, __global unsigned int* j%s_ss," % (j,j)
-        print >>f, "    __global long* sketches) {"
+            print("    __global unsigned int* j%s_ls, __global unsigned int* j%s_ss," % (j,j), file=f)
+        print("    __global long* sketches) {", file=f)
         
         for cid, cols in enumerate(tab.columns):
-            print >>f, "    __local unsigned int cache_c%s[%s];" % (cid,local_size)
-        print >>f, "    for(unsigned int offset = 0; offset < skn; offset += get_global_size(0)){" 
-        print >>f, "           long counter = 0;"
+            print("    __local unsigned int cache_c%s[%s];" % (cid,local_size), file=f)
+        print("    for(unsigned int offset = 0; offset < skn; offset += get_global_size(0)){", file=f) 
+        print("           long counter = 0;", file=f)
         for cid in icols[tid]:
-            print >>f, "           unsigned int my_c%s_ls = (get_global_id(0)+offset < skn) ? c%s_ls[get_global_id(0)+offset] : 0; int my_c%s_ss = (get_global_id(0)+offset < skn) ? is_set(c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32) : 0;" % (cid,cid,cid,cid)
+            print("           unsigned int my_c%s_ls = (get_global_id(0)+offset < skn) ? c%s_ls[get_global_id(0)+offset] : 0; int my_c%s_ss = (get_global_id(0)+offset < skn) ? is_set(c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32) : 0;" % (cid,cid,cid,cid), file=f)
         for j,p1,p2 in pairs:
-            print >>f, "           unsigned int my_j%s_ls = (get_global_id(0)+offset < skn) ? j%s_ls[get_global_id(0)+offset] : 0; int my_j%s_ss = (get_global_id(0)+offset < skn) ? is_set(j%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset)%% 32) : 0;" % (j,j,j,j)
+            print("           unsigned int my_j%s_ls = (get_global_id(0)+offset < skn) ? j%s_ls[get_global_id(0)+offset] : 0; int my_j%s_ss = (get_global_id(0)+offset < skn) ? is_set(j%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset)%% 32) : 0;" % (j,j,j,j), file=f)
     
-        print >>f, "        for(unsigned int i = 0; i < %s; i += get_local_size(0)){" % (ts[tid])
-        print >>f, "            barrier(CLK_LOCAL_MEM_FENCE);"
-        print >>f, "            if(i + get_local_id(0) < %s) {" % (ts[tid])
+        print("        for(unsigned int i = 0; i < %s; i += get_local_size(0)){" % (ts[tid]), file=f)
+        print("            barrier(CLK_LOCAL_MEM_FENCE);", file=f)
+        print("            if(i + get_local_id(0) < %s) {" % (ts[tid]), file=f)
         for cid, cols in enumerate(tab.columns):
-            print >>f, "                cache_c%s[get_local_id(0)] = c%s[i+get_local_id(0)];" % (cid,cid)
-        print >>f, "            }"
-        print >>f, "            barrier(CLK_LOCAL_MEM_FENCE);"
-        print >>f, "            if(get_global_id(0)+offset >= skn) continue;"
-        print >>f, "            for(unsigned int j = 0; j < get_local_size(0) && i+j < %s; j++){" % ts[tid]
-        print >>f, "                counter += %s * %s;" % (" * ".join(map(lambda x : "ech3(cache_c%s[j],my_c%s_ls,my_c%s_ss)" % (x,x,x), icols[tid]))," * ".join(map(lambda x : "ech3(cache_c%s[j],my_j%s_ls,my_j%s_ss)" % (x[1][1],x[0],x[0]), pairs)))
-        print >>f, "            }"
-        print >>f, "        }"
-        print >>f, "        if(get_global_id(0)+offset < skn) sketches[get_global_id(0)+offset] = counter;"
-        print >>f, "    }"    
-        print >>f, "}"    
-        print >>f
+            print("                cache_c%s[get_local_id(0)] = c%s[i+get_local_id(0)];" % (cid,cid), file=f)
+        print("            }", file=f)
+        print("            barrier(CLK_LOCAL_MEM_FENCE);", file=f)
+        print("            if(get_global_id(0)+offset >= skn) continue;", file=f)
+        print("            for(unsigned int j = 0; j < get_local_size(0) && i+j < %s; j++){" % ts[tid], file=f)
+        print("                counter += %s * %s;" % (" * ".join(["ech3(cache_c%s[j],my_c%s_ls,my_c%s_ss)" % (x,x,x) for x in icols[tid]])," * ".join(["ech3(cache_c%s[j],my_j%s_ls,my_j%s_ss)" % (x[1][1],x[0],x[0]) for x in pairs])), file=f)
+        print("            }", file=f)
+        print("        }", file=f)
+        print("        if(get_global_id(0)+offset < skn) sketches[get_global_id(0)+offset] = counter;", file=f)
+        print("    }", file=f)    
+        print("}", file=f)    
+        print(file=f)
             
         
 def generateSketchMultiplyCode(f,query):  
     icols = Utils.generateInvariantColumns(query)   
              
-    print >>f, "__kernel void multiply_sketches("
+    print("__kernel void multiply_sketches(", file=f)
 
     for tid,tab in enumerate(query.tables):
-        print >>f, "    __global long* t%s_sketches," % tid
+        print("    __global long* t%s_sketches," % tid, file=f)
     for i,col in enumerate(icols):
         for j in col:
             if query.tables[i].columns[j].type == "point":
-                print >>f, "    unsigned int t%s_c%s, __global unsigned int* t%s_c%s_ls, __global unsigned int* t%s_c%s_ss," % (i,j,i,j,i,j)
+                print("    unsigned int t%s_c%s, __global unsigned int* t%s_c%s_ls, __global unsigned int* t%s_c%s_ss," % (i,j,i,j,i,j), file=f)
             elif query.tables[i].columns[j].type == "range":
-                print >>f, "    unsigned int u_t%s_c%s, unsigned int l_t%s_c%s, __global unsigned int* t%s_c%s_ls, __global unsigned int* t%s_c%s_ss," % (i,j,i,j,i,j,i,j)
+                print("    unsigned int u_t%s_c%s, unsigned int l_t%s_c%s, __global unsigned int* t%s_c%s_ls, __global unsigned int* t%s_c%s_ss," % (i,j,i,j,i,j,i,j), file=f)
             else:
                 raise Exception("Unknown column type.")
 
-    print >>f, "    __global double* estimates, unsigned int skn) {"
-    print >> f, "    for(unsigned int offset = 0; offset < skn; offset += get_global_size(0)){"
-    print >> f, "        if(get_global_id(0) + offset < skn){"
+    print("    __global double* estimates, unsigned int skn) {", file=f)
+    print("    for(unsigned int offset = 0; offset < skn; offset += get_global_size(0)){", file=f)
+    print("        if(get_global_id(0) + offset < skn){", file=f)
     for i,col in enumerate(icols):
         for j in col:
-            print >>f, "            unsigned int my_t%s_c%s_ls = t%s_c%s_ls[get_global_id(0)+offset]; int my_t%s_c%s_ss = is_set(t%s_c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32);" % (i,j,i,j,i,j,i,j)   
+            print("            unsigned int my_t%s_c%s_ls = t%s_c%s_ls[get_global_id(0)+offset]; int my_t%s_c%s_ss = is_set(t%s_c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32);" % (i,j,i,j,i,j,i,j), file=f)   
     
-    print >>f, "            estimates[get_global_id(0)+offset] = %s " % (" * ".join(map(lambda x : "t%s_sketches[get_global_id(0)+offset]" % x,range(0,len(query.tables))))),
+    print("            estimates[get_global_id(0)+offset] = %s " % (" * ".join(["t%s_sketches[get_global_id(0)+offset]" % x for x in range(0,len(query.tables))])), end=' ', file=f)
     
     for i,col in enumerate(icols):
         for j in col:
             if query.tables[i].columns[j].type == "point":
-                print >>f, "* ech3(t%s_c%s, my_t%s_c%s_ls, my_t%s_c%s_ss)" % (i,j,i,j,i,j),
+                print("* ech3(t%s_c%s, my_t%s_c%s_ls, my_t%s_c%s_ss)" % (i,j,i,j,i,j), end=' ', file=f)
             elif query.tables[i].columns[j].type == "range":
-                print >>f, "* range_ech3(u_t%s_c%s, l_t%s_c%s, my_t%s_c%s_ls, my_t%s_c%s_ss)" % (i,j,i,j,i,j,i,j),
+                print("* range_ech3(u_t%s_c%s, l_t%s_c%s, my_t%s_c%s_ls, my_t%s_c%s_ss)" % (i,j,i,j,i,j,i,j), end=' ', file=f)
             else:
                 raise Exception("Invalid column type.")
                 
-    print >>f, ";"
-    print >>f, "        }"
-    print >>f, "    }"
-    print >>f, "}"
+    print(";", file=f)
+    print("        }", file=f)
+    print("    }", file=f)
+    print("}", file=f)
     
 def generateAGMSCode(i,query,estimator,stats,cu_factor):
     ts, dv = stats
@@ -320,20 +320,20 @@ def generateAGMSCode(i,query,estimator,stats,cu_factor):
         generateSketchConstructionCCode(cf,query,ts,local_size,cu_factor)  
         generateTestWrapper(cf,query,estimator)
             
-        print >>cf, """
+        print("""
 int main( int argc, const char* argv[] ){
     parameters p;
     compute::device device = compute::system::default_device();
     p.ctx = compute::context(device);
     p.queue=compute::command_queue(p.ctx, device);
-"""
-        print >>cf, """
+""", file=cf)
+        print("""
     std::ifstream t("./%s_kernels.cl");
     t.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
     std::string str((std::istreambuf_iterator<char>(t)),
     std::istreambuf_iterator<char>());
-""" % i
-        print >>cf, """
+""" % i, file=cf)
+        print("""
     compute::program pr = compute::program::create_with_source(str,p.ctx);
     try{
         std::ostringstream oss;
@@ -341,77 +341,77 @@ int main( int argc, const char* argv[] ){
     } catch(const std::exception& ex){
         std::cout << pr.build_log() << std::endl;
     }
-        """
-        print >>cf, "    p.iteration = atoi(argv[2]);"
-        print >>cf, "    std::stringstream iteration_stream;"
-        print >>cf, "    iteration_stream << \"./iteration\" << std::setw(2) << std::setfill('0') << argv[2];"
-        print >>cf, "    p.skn = (unsigned int) atoll(argv[1]);"
-        print >>cf, "    p.estimates = compute::vector<double>(p.skn, p.ctx);"
+        """, file=cf)
+        print("    p.iteration = atoi(argv[2]);", file=cf)
+        print("    std::stringstream iteration_stream;", file=cf)
+        print("    iteration_stream << \"./iteration\" << std::setw(2) << std::setfill('0') << argv[2];", file=cf)
+        print("    p.skn = (unsigned int) atoll(argv[1]);", file=cf)
+        print("    p.estimates = compute::vector<double>(p.skn, p.ctx);", file=cf)
         for j,t in enumerate(query.tables):
-            print >>cf, "    p.ts%s= %s;" % (j,ts[j])
-            print >>cf, "    p.sk_t%s = compute::vector<long>(p.skn, p.ctx);" % j
+            print("    p.ts%s= %s;" % (j,ts[j]), file=cf)
+            print("    p.sk_t%s = compute::vector<long>(p.skn, p.ctx);" % j, file=cf)
             for k,c in enumerate(t.columns):
-                print >>cf, "    std::stringstream t%s_c%s_stream ;" % (j,k)
-                print >>cf, "    t%s_c%s_stream <<  \"./table_%s_%s.dump\";" % (j,k,t.tid,c.cid) 
-                print >>cf, "    std::string t%s_c%s_string = t%s_c%s_stream.str();" % (j,k,j,k)
-                print >>cf, "    unsigned int* t%s_c%s = readUArrayFromFile(t%s_c%s_string.c_str());" % (j,k,j,k)
-                print >>cf, "    p.t%s_c%s = toGPUVector(t%s_c%s, p.ts%s, p.ctx, p.queue);" % (j,k,j,k,j)
+                print("    std::stringstream t%s_c%s_stream ;" % (j,k), file=cf)
+                print("    t%s_c%s_stream <<  \"./table_%s_%s.dump\";" % (j,k,t.tid,c.cid), file=cf) 
+                print("    std::string t%s_c%s_string = t%s_c%s_stream.str();" % (j,k,j,k), file=cf)
+                print("    unsigned int* t%s_c%s = readUArrayFromFile(t%s_c%s_string.c_str());" % (j,k,j,k), file=cf)
+                print("    p.t%s_c%s = toGPUVector(t%s_c%s, p.ts%s, p.ctx, p.queue);" % (j,k,j,k,j), file=cf)
 
-        print >>cf, "    boost::random::mt19937 gen;"
+        print("    boost::random::mt19937 gen;", file=cf)
         
         for x, cols in enumerate(icols):
             for y in cols: 
-                print >>cf, "    unsigned int* t%s_c%s_lseed =  (unsigned int*) malloc(sizeof(unsigned int)*p.skn);" % (x,y)
-                print >>cf, "    unsigned int* t%s_c%s_sseed =  (unsigned int*) malloc(((p.skn-1)/(sizeof(unsigned int)*8) +1)*sizeof(8));" % (x,y)
+                print("    unsigned int* t%s_c%s_lseed =  (unsigned int*) malloc(sizeof(unsigned int)*p.skn);" % (x,y), file=cf)
+                print("    unsigned int* t%s_c%s_sseed =  (unsigned int*) malloc(((p.skn-1)/(sizeof(unsigned int)*8) +1)*sizeof(8));" % (x,y), file=cf)
                 
-                print >>cf, "    for(unsigned int i = 0; i < p.skn;  i++ ){"
-                print >>cf, "       t%s_c%s_lseed[i] = gen();" % (x,y)
-                print >>cf, "    }"
+                print("    for(unsigned int i = 0; i < p.skn;  i++ ){", file=cf)
+                print("       t%s_c%s_lseed[i] = gen();" % (x,y), file=cf)
+                print("    }", file=cf)
                 
-                print >>cf, "    for(unsigned int i = 0; i < ((p.skn-1)/(sizeof(unsigned int)*8) +1);  i++ ){" 
-                print >>cf, "       t%s_c%s_sseed[i] = gen();"  % (x,y)
-                print >>cf, "    }"
+                print("    for(unsigned int i = 0; i < ((p.skn-1)/(sizeof(unsigned int)*8) +1);  i++ ){", file=cf) 
+                print("       t%s_c%s_sseed[i] = gen();"  % (x,y), file=cf)
+                print("    }", file=cf)
 
-                print >>cf, "    p.t%s_c%s_lseed =  toGPUVector(t%s_c%s_lseed, p.skn, p.ctx, p.queue);" % (x,y,x,y)
-                print >>cf, "    p.t%s_c%s_sseed =  toGPUVector(t%s_c%s_sseed, ((p.skn-1)/(sizeof(unsigned int)*8) +1), p.ctx, p.queue);" % (x,y,x,y)                
+                print("    p.t%s_c%s_lseed =  toGPUVector(t%s_c%s_lseed, p.skn, p.ctx, p.queue);" % (x,y,x,y), file=cf)
+                print("    p.t%s_c%s_sseed =  toGPUVector(t%s_c%s_sseed, ((p.skn-1)/(sizeof(unsigned int)*8) +1), p.ctx, p.queue);" % (x,y,x,y), file=cf)                
                 
         
         for j,p1,p2 in jpairs:
-            print >>cf, "    unsigned int* j%s_t%s_c%s_t%s_c%s_lseed =  (unsigned int*) malloc(sizeof(unsigned int)*p.skn);" % (j,p1[0],p1[1],p2[0],p2[1])
-            print >>cf, "    unsigned int* j%s_t%s_c%s_t%s_c%s_sseed =  (unsigned int*) malloc(((p.skn-1)/(sizeof(unsigned int)*8) +1)*sizeof(unsigned int));" % (j,p1[0],p1[1],p2[0],p2[1])
+            print("    unsigned int* j%s_t%s_c%s_t%s_c%s_lseed =  (unsigned int*) malloc(sizeof(unsigned int)*p.skn);" % (j,p1[0],p1[1],p2[0],p2[1]), file=cf)
+            print("    unsigned int* j%s_t%s_c%s_t%s_c%s_sseed =  (unsigned int*) malloc(((p.skn-1)/(sizeof(unsigned int)*8) +1)*sizeof(unsigned int));" % (j,p1[0],p1[1],p2[0],p2[1]), file=cf)
             
-            print >>cf, "    for(unsigned int i = 0; i < p.skn;  i++ ){"
-            print >>cf, "       j%s_t%s_c%s_t%s_c%s_lseed[i] = gen();" % (j,p1[0],p1[1],p2[0],p2[1])
-            print >>cf, "    }"
+            print("    for(unsigned int i = 0; i < p.skn;  i++ ){", file=cf)
+            print("       j%s_t%s_c%s_t%s_c%s_lseed[i] = gen();" % (j,p1[0],p1[1],p2[0],p2[1]), file=cf)
+            print("    }", file=cf)
             
-            print >>cf, "    for(unsigned int i = 0; i < ((p.skn-1)/(sizeof(unsigned int)*8) +1);  i++ ){" 
-            print >>cf, "       j%s_t%s_c%s_t%s_c%s_sseed[i] = gen();"  % (j,p1[0],p1[1],p2[0],p2[1])
-            print >>cf, "    }"
+            print("    for(unsigned int i = 0; i < ((p.skn-1)/(sizeof(unsigned int)*8) +1);  i++ ){", file=cf) 
+            print("       j%s_t%s_c%s_t%s_c%s_sseed[i] = gen();"  % (j,p1[0],p1[1],p2[0],p2[1]), file=cf)
+            print("    }", file=cf)
  
-            print >>cf, "    p.j%s_t%s_c%s_t%s_c%s_lseed = toGPUVector(j%s_t%s_c%s_t%s_c%s_lseed, p.skn, p.ctx, p.queue);" % (j,p1[0],p1[1],p2[0],p2[1],j,p1[0],p1[1],p2[0],p2[1])
-            print >>cf, "    p.j%s_t%s_c%s_t%s_c%s_sseed = toGPUVector(j%s_t%s_c%s_t%s_c%s_sseed, ((p.skn-1)/(sizeof(unsigned int)*8) +1), p.ctx, p.queue); " % (j,p1[0],p1[1],p2[0],p2[1],j,p1[0],p1[1],p2[0],p2[1])    
+            print("    p.j%s_t%s_c%s_t%s_c%s_lseed = toGPUVector(j%s_t%s_c%s_t%s_c%s_lseed, p.skn, p.ctx, p.queue);" % (j,p1[0],p1[1],p2[0],p2[1],j,p1[0],p1[1],p2[0],p2[1]), file=cf)
+            print("    p.j%s_t%s_c%s_t%s_c%s_sseed = toGPUVector(j%s_t%s_c%s_t%s_c%s_sseed, ((p.skn-1)/(sizeof(unsigned int)*8) +1), p.ctx, p.queue); " % (j,p1[0],p1[1],p2[0],p2[1],j,p1[0],p1[1],p2[0],p2[1]), file=cf)    
             
         for j,t in enumerate(query.tables):    
-            print >>cf, "    p.t%s_construct_sketch = pr.create_kernel(\"t%s_construct_sketch\");" % (j,j) 
-        print >>cf, "    p.multiply_sketches = pr.create_kernel(\"multiply_sketches\");"
-        print >>cf, "    sketch_contruction(&p);"
+            print("    p.t%s_construct_sketch = pr.create_kernel(\"t%s_construct_sketch\");" % (j,j), file=cf) 
+        print("    p.multiply_sketches = pr.create_kernel(\"multiply_sketches\");", file=cf)
+        print("    sketch_contruction(&p);", file=cf)
         
-        print >>cf, "    std::string test_cardinality_string = iteration_stream.str() + \"/test_join_true.dump\";"
-        print >>cf, "    p.j_test_cardinality = readUArrayFromFile(test_cardinality_string.c_str());"
+        print("    std::string test_cardinality_string = iteration_stream.str() + \"/test_join_true.dump\";", file=cf)
+        print("    p.j_test_cardinality = readUArrayFromFile(test_cardinality_string.c_str());", file=cf)
         
         for i,indices in enumerate(icols):
             for j in indices:
                 if query.tables[i].columns[j].type == "point": 
-                    print >>cf, "    std::string j_p_t%s_c%s_string = iteration_stream.str() + \"/test_join_p_%s_%s.dump\";" % (i,j,query.tables[i].tid,query.tables[i].columns[j].cid)
-                    print >>cf, "    p.j_p_t%s_c%s = readUArrayFromFile(j_p_t%s_c%s_string.c_str());" % (i,j,i,j)
+                    print("    std::string j_p_t%s_c%s_string = iteration_stream.str() + \"/test_join_p_%s_%s.dump\";" % (i,j,query.tables[i].tid,query.tables[i].columns[j].cid), file=cf)
+                    print("    p.j_p_t%s_c%s = readUArrayFromFile(j_p_t%s_c%s_string.c_str());" % (i,j,i,j), file=cf)
                 elif query.tables[i].columns[j].type == "range": 
-                    print >>cf, "    std::string j_u_t%s_c%s_string = iteration_stream.str() + \"/test_join_u_%s_%s.dump\";" % (i,j,query.tables[i].tid,query.tables[i].columns[j].cid)
-                    print >>cf, "    std::string j_l_t%s_c%s_string = iteration_stream.str() + \"/test_join_l_%s_%s.dump\";" % (i,j,query.tables[i].tid,query.tables[i].columns[j].cid)
-                    print >>cf, "    p.j_u_t%s_c%s = readUArrayFromFile(j_u_t%s_c%s_string.c_str());" % (i,j,i,j)
-                    print >>cf, "    p.j_l_t%s_c%s = readUArrayFromFile(j_l_t%s_c%s_string.c_str());" % (i,j,i,j)
+                    print("    std::string j_u_t%s_c%s_string = iteration_stream.str() + \"/test_join_u_%s_%s.dump\";" % (i,j,query.tables[i].tid,query.tables[i].columns[j].cid), file=cf)
+                    print("    std::string j_l_t%s_c%s_string = iteration_stream.str() + \"/test_join_l_%s_%s.dump\";" % (i,j,query.tables[i].tid,query.tables[i].columns[j].cid), file=cf)
+                    print("    p.j_u_t%s_c%s = readUArrayFromFile(j_u_t%s_c%s_string.c_str());" % (i,j,i,j), file=cf)
+                    print("    p.j_l_t%s_c%s = readUArrayFromFile(j_l_t%s_c%s_string.c_str());" % (i,j,i,j), file=cf)
                 else:
                     raise Exception("Unknown column type.")
         
-        print >>cf
-        print >>cf, "    join_test(&p);"
-        print >>cf, "}"
+        print(file=cf)
+        print("    join_test(&p);", file=cf)
+        print("}", file=cf)

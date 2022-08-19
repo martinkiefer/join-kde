@@ -27,7 +27,7 @@ class Uhash:
         return self.hash_int(x,self.p-1) / float(self.p-1)  
 
 def _json_object_hook(d): 
-    return namedtuple('X', d.keys())(*d.values())
+    return namedtuple('X', list(d.keys()))(*list(d.values()))
 def json2obj(data): 
     return json.loads(data, object_hook=_json_object_hook)
     
@@ -42,7 +42,7 @@ def readCol(fname,n):
 def generateInvariantColumns(query):
     cols = [None]* len(query.tables)
     for j,t in enumerate(query.tables):
-        cols[j] = range(0,len(t.columns))
+        cols[j] = list(range(0,len(t.columns)))
         
     for join in query.joins:
         for ic in join:
@@ -54,7 +54,7 @@ def generateInvariantColumns(query):
 def generateInvariantPointColumns(query):
     cols = [None]* len(query.tables)
     for j,t in enumerate(query.tables):
-        cols[j] = range(0,len(t.columns))
+        cols[j] = list(range(0,len(t.columns)))
         
     for join in query.joins:
         for ic in join:
@@ -74,7 +74,7 @@ def generateInvariantPointColumns(query):
 def generateInvariantRangeColumns(query):
     cols = [None]* len(query.tables)
     for j,t in enumerate(query.tables):
-        cols[j] = range(0,len(t.columns))
+        cols[j] = list(range(0,len(t.columns)))
         
     for join in query.joins:
         for ic in join:
@@ -201,24 +201,24 @@ def retreiveJoinStatistics(cnf,query):
     return js,dvs
     
 def generateFileCheckFunction(f):
-    print >>f, """
+    print("""
 inline bool fexists(const char* name) {
     std::ifstream f(name);
     return f.good();
 }
-"""   
+""", file=f)   
 
 def generateDoubleDumper(f):
-    print >>f, """
+    print("""
 void ddump(double* array, size_t n, const char* name) {
     FILE* f = fopen(name,"wb");
     fwrite(array, sizeof(double), n, f);
     fclose(f);
 }
-"""   
+""", file=f)   
 
 def generateGPUVectorConverterFunction(f):
-    print >>f, """
+    print("""
 template <typename T>
 compute::vector<T> toGPUVector(T* arr, size_t n, compute::context &context, compute::command_queue &queue){
     compute::vector<T> vec (n, context);
@@ -227,10 +227,10 @@ compute::vector<T> toGPUVector(T* arr, size_t n, compute::context &context, comp
     );
    return vec;
 }  
-"""   
+""", file=f)   
 
 def generateUintFileReaderFunction(f):    
-    print >>f, """unsigned int* readUArrayFromFile(const char* filename, size_t * filesize = NULL){
+    print("""unsigned int* readUArrayFromFile(const char* filename, size_t * filesize = NULL){
     FILE *f1 = fopen(filename, "rb");
     assert(f1 != NULL);
     fseek(f1, 0, SEEK_END);
@@ -243,10 +243,10 @@ def generateUintFileReaderFunction(f):
 
     return tab1;
 }
-"""
+""", file=f)
 
 def generateDoubleFileReaderFunction(f):    
-    print >>f, """   
+    print("""   
 double* readDArrayFromFile(const char* filename){
     FILE *f1 = fopen(filename, "rb");
     assert(f1 != NULL);
@@ -259,10 +259,10 @@ double* readDArrayFromFile(const char* filename){
     
     return tab1;
 }
-"""
+""", file=f)
 
 def generateScottBWFunction(f):
-    print >>f,"""
+    print("""
 double scott_bw(unsigned int* sample, unsigned int sample_size, unsigned int d){
     double mean = 0.0;
     double sdev = 0.0;
@@ -282,14 +282,14 @@ double scott_bw(unsigned int* sample, unsigned int sample_size, unsigned int d){
 
     return pow((double)sample_size,-1.0/(d+4))*sdev;
 }
-""" 
+""", file=f) 
 
 def printResultString(modelsize,est,trues,iteration):
-    print "%s,%s,%f,%f,%f,%f,%f,%f" % (iteration,modelsize,est,trues,(est-trues)*(est-trues),abs(est-trues),abs(est-trues)/trues,max(max(est,1.0)/max(trues,1.0),max(trues,1.0)/max(est,1.0)))
+    print("%s,%s,%f,%f,%f,%f,%f,%f" % (iteration,modelsize,est,trues,(est-trues)*(est-trues),abs(est-trues),abs(est-trues)/trues,max(max(est,1.0)/max(trues,1.0),max(trues,1.0)/max(est,1.0))))
     sys.stdout.flush()
     
 def generateRoundMethod(f):
-    print >>f, """
+    print("""
 size_t roundUp(size_t numToRound, size_t multiple)
 {
     if (multiple == 0)
@@ -301,8 +301,8 @@ size_t roundUp(size_t numToRound, size_t multiple)
 
     return numToRound + multiple - remainder;
 }
-    """
+    """, file=f)
 
 def printObjectiveLine(f,modelsize):
-    print >>f, "        if(est < 1.0) est = 1.0;"
-    print >>f, "        std::cout << p->iteration << \",\" << %s << \",\" << est << \",\" << trues << \",\" << (fmax(est,0)-trues)*(fmax(est,0)-trues) << \",\" << fabs(fmax(est,0)-trues) << \",\" << fabs(fmax(est,0)-trues)/trues << \",\" << fmax(fmax(trues,1.0)/fmax(est,1.0),fmax(est,1.0)/fmax(trues,1.0)) << \",\" <<  std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << std::endl;" % modelsize
+    print("        if(est < 1.0) est = 1.0;", file=f)
+    print("        std::cout << p->iteration << \",\" << %s << \",\" << est << \",\" << trues << \",\" << (fmax(est,0)-trues)*(fmax(est,0)-trues) << \",\" << fabs(fmax(est,0)-trues) << \",\" << fabs(fmax(est,0)-trues)/trues << \",\" << fmax(fmax(trues,1.0)/fmax(est,1.0),fmax(est,1.0)/fmax(trues,1.0)) << \",\" <<  std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << std::endl;" % modelsize, file=f)

@@ -3,63 +3,63 @@ import Utils
 local_size = 64
 
 def generatePreamble(f):
-    print >>f, """
+    print("""
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #ifndef M_SQRT2
      #define M_SQRT2     1.41421356237309504880168872420969808
 #endif
 typedef double T;
-"""
+""", file=f)
 
 def rangeEstimateFunction(f):
-    print >>f, """
+    print("""
 unsigned int range(unsigned int v, unsigned int u, unsigned int l){
     if(v == 0){
         return 0;
     }
     return v >= l && v <= u;
 }
-"""
+""", file=f)
 
 def pointEstimateFunction(f):
-    print >>f, """
+    print("""
 unsigned int point(unsigned int v, unsigned int p){
     return v == p;
 }
-"""
+""", file=f)
 
 def generateEstimateKernel(f,kname,qtypes):
-    print >>f, "__kernel void %s(" % kname
+    print("__kernel void %s(" % kname, file=f)
     for i,k in enumerate(qtypes):
         if k == "range":
-            print >>f, "    __global unsigned int* c%s,  unsigned int  u%s, unsigned int l%s, " % (i,i,i)
+            print("    __global unsigned int* c%s,  unsigned int  u%s, unsigned int l%s, " % (i,i,i), file=f)
         elif k == "point":
-            print >>f, "    __global unsigned int* c%s, unsigned int p%s, " % (i,i)
+            print("    __global unsigned int* c%s, unsigned int p%s, " % (i,i), file=f)
         else:
             raise Exception("Unsupported kernel.")
-    print >>f, "    __global unsigned long* o, unsigned int ss){"
-    print >>f, "        unsigned int counter = 0;"
-    print >>f, "        for(unsigned int offset = 0; offset < ss; offset += get_global_size(0)){"
-    print >>f, "            if (offset + get_global_id(0) < ss){"
+    print("    __global unsigned long* o, unsigned int ss){", file=f)
+    print("        unsigned int counter = 0;", file=f)
+    print("        for(unsigned int offset = 0; offset < ss; offset += get_global_size(0)){", file=f)
+    print("            if (offset + get_global_id(0) < ss){", file=f)
     for i,k in enumerate(qtypes):
         if k == "point":
-            print >>f, "                unsigned int ec%s = point(c%s[offset+get_global_id(0)], p%s);" % (i,i,i)
+            print("                unsigned int ec%s = point(c%s[offset+get_global_id(0)], p%s);" % (i,i,i), file=f)
         elif k == "range":
-            print >>f, "                unsigned int ec%s = range(c%s[offset+get_global_id(0)], u%s, l%s);" % (i,i,i,i)
+            print("                unsigned int ec%s = range(c%s[offset+get_global_id(0)], u%s, l%s);" % (i,i,i,i), file=f)
         else:
             raise Exception("Unsupported kernel.")
-    print >>f, "                counter += 1 ",
+    print("                counter += 1 ", end=' ', file=f)
     for i,k in enumerate(qtypes):
-        print >>f, "&& ec%s" % i,
-    print >>f, ";"
-    print >>f, "            }"
-    print >>f, "        }"
-    print >>f, "        o[get_global_id(0)] = counter;"
-    print >>f, "}"
-    print >>f
+        print("&& ec%s" % i, end=' ', file=f)
+    print(";", file=f)
+    print("            }", file=f)
+    print("        }", file=f)
+    print("        o[get_global_id(0)] = counter;", file=f)
+    print("}", file=f)
+    print(file=f)
     
 def generateCIncludes(f):
-    print >>f, """
+    print("""
     
 #include <iostream>
 #include <string>
@@ -76,7 +76,7 @@ def generateCIncludes(f):
 #include <boost/compute/functional/math.hpp>
 
 namespace compute = boost::compute;
-"""
+""", file=f)
 
 def generateGPUJoinSampleCode(i,query,estimator,stats,cu_factor):
     ts, dv = stats
@@ -102,38 +102,38 @@ def generateGPUJoinSampleCode(i,query,estimator,stats,cu_factor):
         generateGPUJoinSampleEstimateFunction(cf,query,estimator,qtype)
         generateGPUJoinSampleTestWrapper(cf,query,estimator,qtype)
         
-        print >>cf, """
+        print("""
 int main( int argc, const char* argv[] ){
     parameters p;
 
     compute::device device = compute::system::default_device();
     p.ctx = compute::context(device);
     p.queue=compute::command_queue(p.ctx, device);
-""" 
+""", file=cf) 
 
-        print >>cf, """
+        print("""
     std::ifstream t("./%s_kernels.cl");
     t.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
     std::string str((std::istreambuf_iterator<char>(t)),
     std::istreambuf_iterator<char>());
-""" % i
+""" % i, file=cf)
 
         #Read table sizes and read columns into memory and transfer to device the GPU
-        print >>cf, "    std::stringstream iteration_stream;"
-        print >>cf, "    p.iteration = (unsigned int) atoi(argv[2]);"
-        print >>cf, "    iteration_stream << \"./iteration\" << std::setw(2) << std::setfill('0') << argv[2];"
-        print >>cf, "    p.ss = atoi(argv[1]);"
-        print >> cf, "    p.local = 64;"
-        print >> cf, "    p.global = std::min((size_t) p.ctx.get_device().compute_units()*%s, ((p.ss-1)/p.local+1)*p.local);" % cu_factor
-        print >>cf, "    p.ts = %s;" % (ts)
+        print("    std::stringstream iteration_stream;", file=cf)
+        print("    p.iteration = (unsigned int) atoi(argv[2]);", file=cf)
+        print("    iteration_stream << \"./iteration\" << std::setw(2) << std::setfill('0') << argv[2];", file=cf)
+        print("    p.ss = atoi(argv[1]);", file=cf)
+        print("    p.local = 64;", file=cf)
+        print("    p.global = std::min((size_t) p.ctx.get_device().compute_units()*%s, ((p.ss-1)/p.local+1)*p.local);" % cu_factor, file=cf)
+        print("    p.ts = %s;" % (ts), file=cf)
         for cid,kernel in enumerate(qtype):
-            print >>cf, "    std::stringstream s_c%s_stream ;" % (cid)
-            print >>cf, "    s_c%s_stream << iteration_stream.str() << \"/jsample_\" << atoi(argv[1]) << \"_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid) 
-            print >>cf, "    std::string s_c%s_string = s_c%s_stream.str();" % (cid,cid)
-            print >>cf, "    unsigned int* s_c%s = readUArrayFromFile(s_c%s_string.c_str());" % (cid,cid)
-            print >>cf, "    p.s_c%s = toGPUVector(s_c%s, p.ss, p.ctx, p.queue);" % (cid,cid)
-            print >>cf   
-        print >>cf, """
+            print("    std::stringstream s_c%s_stream ;" % (cid), file=cf)
+            print("    s_c%s_stream << iteration_stream.str() << \"/jsample_\" << atoi(argv[1]) << \"_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid), file=cf) 
+            print("    std::string s_c%s_string = s_c%s_stream.str();" % (cid,cid), file=cf)
+            print("    unsigned int* s_c%s = readUArrayFromFile(s_c%s_string.c_str());" % (cid,cid), file=cf)
+            print("    p.s_c%s = toGPUVector(s_c%s, p.ss, p.ctx, p.queue);" % (cid,cid), file=cf)
+            print(file=cf)   
+        print("""
     compute::program pr = compute::program::create_with_source(str,p.ctx);
     try{
         std::ostringstream oss;
@@ -141,125 +141,125 @@ int main( int argc, const char* argv[] ){
     } catch(const std::exception& ex){
         std::cout << pr.build_log() << std::endl;
     }
-        """
-        print >>cf, "    p.out = compute::vector<unsigned long>(p.global, p.ctx);"
-        print >>cf, "    p.estk = pr.create_kernel(\"estimate\");"
+        """, file=cf)
+        print("    p.out = compute::vector<unsigned long>(p.global, p.ctx);", file=cf)
+        print("    p.estk = pr.create_kernel(\"estimate\");", file=cf)
 
-        print >>cf, "    std::string test_cardinality_string = iteration_stream.str() + \"/test_join_true.dump\";"
-        print >>cf, "    p.test_cardinality = readUArrayFromFile(test_cardinality_string.c_str());"
+        print("    std::string test_cardinality_string = iteration_stream.str() + \"/test_join_true.dump\";", file=cf)
+        print("    p.test_cardinality = readUArrayFromFile(test_cardinality_string.c_str());", file=cf)
 
         for cid,ty in enumerate(qtype):
             if ty == "range":
-                print >>cf, "    std::string test_l_c%s_string = iteration_stream.str() + \"/test_join_l_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid)
-                print >>cf, "    p.test_l_c%s= readUArrayFromFile(test_l_c%s_string.c_str());" % (cid,cid)
-                print >>cf, "    std::string test_u_c%s_string = iteration_stream.str() + \"/test_join_u_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid)
-                print >>cf, "    p.test_u_c%s = readUArrayFromFile(test_u_c%s_string.c_str());" % (cid,cid)
+                print("    std::string test_l_c%s_string = iteration_stream.str() + \"/test_join_l_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid), file=cf)
+                print("    p.test_l_c%s= readUArrayFromFile(test_l_c%s_string.c_str());" % (cid,cid), file=cf)
+                print("    std::string test_u_c%s_string = iteration_stream.str() + \"/test_join_u_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid), file=cf)
+                print("    p.test_u_c%s = readUArrayFromFile(test_u_c%s_string.c_str());" % (cid,cid), file=cf)
             elif ty == "point":
-                print >>cf, "    std::string test_p_c%s_string = iteration_stream.str() + \"/test_join_p_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid)
-                print >>cf, "    p.test_p_c%s = readUArrayFromFile(test_p_c%s_string.c_str());" % (cid,cid) 
+                print("    std::string test_p_c%s_string = iteration_stream.str() + \"/test_join_p_%s_%s.dump\";" % (cid,query.tables[remap[cid][0]].tid,query.tables[remap[cid][0]].columns[remap[cid][1]].cid), file=cf)
+                print("    p.test_p_c%s = readUArrayFromFile(test_p_c%s_string.c_str());" % (cid,cid), file=cf) 
             else:
                 raise Exception("I don't know this ctype.")
 
-        print >>cf
-        print >>cf, "    join_test(&p);"
-        print >>cf, "}" 
+        print(file=cf)
+        print("    join_test(&p);", file=cf)
+        print("}", file=cf) 
         
         
 def generateGPUJoinSampleParameterArray(f,query,estimator,qtypes):
-    print >>f, """
+    print("""
 typedef struct{
     compute::command_queue queue;
     compute::context ctx;
-"""
-    print >>f, "    unsigned int iteration;"
-    print >>f, "    size_t ss;"
-    print >>f, "    size_t global;"
-    print >>f, "    size_t local;"
-    print >>f, "    unsigned int ts;"
-    print >>f, "    compute::kernel estk;"
+""", file=f)
+    print("    unsigned int iteration;", file=f)
+    print("    size_t ss;", file=f)
+    print("    size_t global;", file=f)
+    print("    size_t local;", file=f)
+    print("    unsigned int ts;", file=f)
+    print("    compute::kernel estk;", file=f)
     for cid,kernel in enumerate(qtypes):
-        print >>f, "    compute::vector<unsigned int> s_c%s;" % (cid)
+        print("    compute::vector<unsigned int> s_c%s;" % (cid), file=f)
             
     for cid,kernel in enumerate(qtypes):
         if kernel == "range":
-            print >>f, "    unsigned int* test_l_c%s;" % (cid)
-            print >>f, "    unsigned int* test_u_c%s;" % (cid)
+            print("    unsigned int* test_l_c%s;" % (cid), file=f)
+            print("    unsigned int* test_u_c%s;" % (cid), file=f)
         else:
-            print >>f, "    unsigned int* test_p_c%s;" % (cid) 
+            print("    unsigned int* test_p_c%s;" % (cid), file=f) 
             
-    print >>f, "    compute::vector<unsigned long> out;"
-    print >>f, "    unsigned int* test_cardinality;"
+    print("    compute::vector<unsigned long> out;", file=f)
+    print("    unsigned int* test_cardinality;", file=f)
 
-    print >>f, """
+    print("""
 } parameters;
-"""
+""", file=f)
 
 
 def generateGPUJoinSampleEstimateFunction(f, query, estimator, qtypes):
-     print >> f, "double join_estimate_instance(parameters* p"
+     print("double join_estimate_instance(parameters* p", file=f)
      for cid, qtype in enumerate(qtypes):
          # Start with computing the invariant contributions
          if qtype == "range":
-             print >> f, "    , unsigned int u_c%s, unsigned int l_c%s" % (cid, cid)
+             print("    , unsigned int u_c%s, unsigned int l_c%s" % (cid, cid), file=f)
          else:
-             print >> f, "    , unsigned int p_c%s" % (cid)
+             print("    , unsigned int p_c%s" % (cid), file=f)
 
-     print >> f, "){"
-     print >> f, "    p->estk.set_args(",
+     print("){", file=f)
+     print("    p->estk.set_args(", end=' ', file=f)
      for cid, qtype in enumerate(qtypes):
          if qtype == "range":
-             print >> f, "p->s_c%s, u_c%s, l_c%s, " % (cid, cid, cid),
+             print("p->s_c%s, u_c%s, l_c%s, " % (cid, cid, cid), end=' ', file=f)
          else:
-             print >> f, "p->s_c%s, p_c%s, " % (cid, cid),
-     print >> f, " p->out, (unsigned int) p->ss",
-     print >> f, ");"
-     print >> f, "    boost::compute::event ev = p->queue.enqueue_nd_range_kernel(p->estk,1,NULL,&(p->global), &(p->local));"
+             print("p->s_c%s, p_c%s, " % (cid, cid), end=' ', file=f)
+     print(" p->out, (unsigned int) p->ss", end=' ', file=f)
+     print(");", file=f)
+     print("    boost::compute::event ev = p->queue.enqueue_nd_range_kernel(p->estk,1,NULL,&(p->global), &(p->local));", file=f)
      # print >>f, "    ev.wait();"
 
-     print >> f, "    unsigned long est = 0;"
-     print >> f, "    boost::compute::reduce(p->out.begin(), p->out.begin()+std::min(p->global, p->ss), &est, p->queue);"
-     print >> f, "    p->queue.finish();"
-     print >> f, "    return est * ((double) p->ts)/p->ss;"
+     print("    unsigned long est = 0;", file=f)
+     print("    boost::compute::reduce(p->out.begin(), p->out.begin()+std::min(p->global, p->ss), &est, p->queue);", file=f)
+     print("    p->queue.finish();", file=f)
+     print("    return est * ((double) p->ts)/p->ss;", file=f)
      # At this point, we need a
-     print >> f, "}"
+     print("}", file=f)
 
 
 def generateGPUJoinSampleTestWrapper(f,query,estimator,qtypes):
-    print >>f, "double join_test(parameters* p){"
-    print >>f, "    double objective = 0.0;"
-    print >>f, "    double est = 0.0;"
-    print >>f, "    int first = 1;"
+    print("double join_test(parameters* p){", file=f)
+    print("    double objective = 0.0;", file=f)
+    print("    double est = 0.0;", file=f)
+    print("    int first = 1;", file=f)
 
-    print >>f, "    for(unsigned int i = 0; i < %s; i++){" % estimator.test
-    print >> f, "       auto begin = std::chrono::high_resolution_clock::now();"
-    print >>f, "        if(first ",
+    print("    for(unsigned int i = 0; i < %s; i++){" % estimator.test, file=f)
+    print("       auto begin = std::chrono::high_resolution_clock::now();", file=f)
+    print("        if(first ", end=' ', file=f)
 
     for cid, qtype in enumerate(qtypes):
         if qtype == "range":
-            print >>f, "|| p->test_l_c%s[i] != p->test_l_c%s[i-1] " % (cid,cid),
-            print >>f, "|| p->test_u_c%s[i] != p->test_u_c%s[i-1] " % (cid,cid),
+            print("|| p->test_l_c%s[i] != p->test_l_c%s[i-1] " % (cid,cid), end=' ', file=f)
+            print("|| p->test_u_c%s[i] != p->test_u_c%s[i-1] " % (cid,cid), end=' ', file=f)
         else:
-            print >>f, "|| p->test_p_c%s[i] != p->test_p_c%s[i-1] " % (cid,cid),
-    print >>f, "){"
+            print("|| p->test_p_c%s[i] != p->test_p_c%s[i-1] " % (cid,cid), end=' ', file=f)
+    print("){", file=f)
     if hasattr(estimator, 'look_behind'):
         if estimator.look_behind:
-            print >> f, "            first = 0;"
+            print("            first = 0;", file=f)
     else:
-        print >>f, "            first = 0;"
-    print >>f, "            est = join_estimate_instance(p",
+        print("            first = 0;", file=f)
+    print("            est = join_estimate_instance(p", end=' ', file=f)
 
     for cid, qtype in enumerate(qtypes):
         if qtype == "range":
-            print >>f, ", p->test_u_c%s[i]" % (cid),
-            print >>f, ", p->test_l_c%s[i]" % (cid),
+            print(", p->test_u_c%s[i]" % (cid), end=' ', file=f)
+            print(", p->test_l_c%s[i]" % (cid), end=' ', file=f)
         else:
-            print >>f, ", p->test_p_c%s[i]" % (cid),
-    print >>f, ");"
-    print >>f, "        }"
-    print >>f, "        auto end = std::chrono::high_resolution_clock::now();"
-    print >>f, "        double trues = p->test_cardinality[i];"
-    print >>f, "        objective += (est-trues)*(est-trues);"
+            print(", p->test_p_c%s[i]" % (cid), end=' ', file=f)
+    print(");", file=f)
+    print("        }", file=f)
+    print("        auto end = std::chrono::high_resolution_clock::now();", file=f)
+    print("        double trues = p->test_cardinality[i];", file=f)
+    print("        objective += (est-trues)*(est-trues);", file=f)
     Utils.printObjectiveLine(f,"p->ss")
-    print >>f, "    }"
-    print >>f, "    return objective/%s;" % estimator.test
-    print >>f, "}"
+    print("    }", file=f)
+    print("    return objective/%s;" % estimator.test, file=f)
+    print("}", file=f)

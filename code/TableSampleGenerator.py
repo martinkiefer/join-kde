@@ -35,7 +35,7 @@ def generateSamples(cnf,query,sample_sizes,fprefix,dprefix,iterations):
                     
                 np_array = np.array(generateSample(cur,t,size,sidd[tid]))
                 for i,col in enumerate(t.columns):
-                    f = open("%s/iteration%02d/%ssample_%s_%s_%s.dump" % (fprefix,iteration,dprefix,size,t.tid,col.cid),"w")
+                    f = open("%s/iteration%02d/%ssample_%s_%s_%s.dump" % (fprefix,iteration,dprefix,size,t.tid,col.cid),"wb")
                     a = array.array("I",np_array.T[i])
                     a.tofile(f)
                     f.close()

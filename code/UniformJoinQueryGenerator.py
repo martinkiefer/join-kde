@@ -142,12 +142,12 @@ def generateQueryData(cnf,query,queries,fprefix,dprefix,iterations):
         j = 0
         for i,col in enumerate(cols):
             for c in col:
-                f = open("%s/iteration%02d/%sjoin_p_%s_%s.dump" % (fprefix,iteration,dprefix,query.tables[i].tid,query.tables[i].columns[c].cid),"w")
+                f = open("%s/iteration%02d/%sjoin_p_%s_%s.dump" % (fprefix,iteration,dprefix,query.tables[i].tid,query.tables[i].columns[c].cid),"wb")
                 a = array.array("I",np_array.T[j])
                 a.tofile(f)
                 f.close()
                 j += 1  
-        f = open("%s/iteration%02d/%sjoin_true.dump" % (fprefix,iteration,dprefix),"w")
+        f = open("%s/iteration%02d/%sjoin_true.dump" % (fprefix,iteration,dprefix),"wb")
         a = array.array("I",np_array.T[j])
         a.tofile(f)
         f.close()

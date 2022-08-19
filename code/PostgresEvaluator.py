@@ -8,12 +8,12 @@ import psycopg2 as pg
 import Utils 
 import sys
 from collections import defaultdict
-import cPickle
+import pickle
 import re
 
 def constructJoinQuery(query):
      icols = Utils.generateInvariantColumns(query)
-     s = "explain select * from %s where" % ",".join(map(lambda x : x.tid ,query.tables))
+     s = "explain select * from %s where" % ",".join([x.tid for x in query.tables])
 
      jps = []
      for j in query.joins:
@@ -25,7 +25,7 @@ def constructJoinQuery(query):
               else:
                    jps.append((first,tup)) 
 
-     s += "and".join(map(lambda x : " %s.%s = %s.%s " % (x[0][0],x[0][1],x[1][0],x[1][1]),jps))    
+     s += "and".join([" %s.%s = %s.%s " % (x[0][0],x[0][1],x[1][0],x[1][1]) for x in jps])    
      #for t,cs in enumerate(icols):
      #   for c in cs:
      # 	    s += " and %s.%s = %%s" % (query.tables[t].tid,query.tables[t].columns[c].cid)

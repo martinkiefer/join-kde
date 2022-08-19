@@ -14,7 +14,7 @@ import JoinSampleGenerator as jsg
 import TableDump as td
 import AGMSCodeGenerator
 import Utils
-import cPickle
+import pickle
 import SizeComputations
 
    
@@ -95,7 +95,7 @@ for i,estimator in enumerate(descriptor.estimators):
             for it in range(0,descriptor.iterations):
                 rf.write("python2 ./CountSampleEvaluator.py %s %s %s >> %s\n" % (' '.join(SizeComputations.ComputeGPUJKDESampleSize(descriptor.query_descriptor,ss).astype(str)), it, estimator.test, "%s_Sample.results" % i))     
         with open("./stats.pick",'w') as f:
-            cPickle.dump(stats,f)
+            pickle.dump(stats,f)
     elif estimator.estimator == "GPUJoinSample":
         if jstats == None:
             jstats = Utils.retreiveJoinStatistics(descriptor.pg_conf,descriptor.query_descriptor)
@@ -130,7 +130,7 @@ for i,estimator in enumerate(descriptor.estimators):
             for it in range(0,descriptor.iterations):
                 rf.write("python2 ./JoinSampleEvaluator.py %s %s %s >> %s\n" % (SizeComputations.ComputeGPUKDESampleSize(descriptor.query_descriptor,ss), it, estimator.test, "%s_JoinSample.results" % i))            
         with open("./jstats.pick",'w') as f:
-            cPickle.dump(jstats,f)
+            pickle.dump(jstats,f)
     elif estimator.estimator == "Sample":
         if stats == None:
             stats = Utils.retreiveTableStatistics(descriptor.pg_conf,descriptor.query_descriptor)
@@ -139,7 +139,7 @@ for i,estimator in enumerate(descriptor.estimators):
             for it in range(0,descriptor.iterations):
                 rf.write("python2 ./SampleEvaluator.py %s %s %s >> %s\n" % (' '.join(SizeComputations.ComputeGPUJKDESampleSize(descriptor.query_descriptor,ss).astype(str)), it, estimator.test, "%s_Sample.results" % i))     
         with open("./stats.pick",'w') as f:
-            cPickle.dump(stats,f)
+            pickle.dump(stats,f)
     else:
         raise Exception("Unknown estimator: %s" % estimator.estimator)
 rf.close()
@@ -150,7 +150,7 @@ cf.close()
 #print SizeComputations.ComputeAGMSSkn(descriptor.query_descriptor,size)
 
 if not os.path.exists("./data_lock"):
-    print "Generating test data..."
+    print("Generating test data...")
     if descriptor.dump_tables:
          td.dumpTables(descriptor.pg_conf,descriptor.query_descriptor,"./","")
     
@@ -206,7 +206,7 @@ if not os.path.exists("./query_lock"):
     else:
         raise Exception("Unknown workload.")
 else:
-    print "WARNING: There was a generator lock."
+    print("WARNING: There was a generator lock.")
 
 f = open('./query_lock','w')
 f.close()

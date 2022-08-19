@@ -1,5 +1,6 @@
 import Utils
 import numpy as np
+from functools import reduce
 
 def ComputeAGMSSize(query,skn):
     icols = Utils.generateInvariantColumns(query)
@@ -55,7 +56,7 @@ def ComputeGPUJKDESize(query,atuples):
  
 def ComputeGPUJKDESampleSize(query,sizes, local_size = 64):
     sizes = sizes*8
-    factors = np.array(map(lambda x : len(x.columns)*32,query.tables))
+    factors = np.array([len(x.columns)*32 for x in query.tables])
     sizes = (sizes/factors)
     return sizes
 

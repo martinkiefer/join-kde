@@ -55,7 +55,7 @@ def generateCorrelatedSamples(cnf,query,sample_sizes,fprefix,dprefix,iterations,
                     
                 np_array = np.array(generateCorrelatedSample(cur,query,iteration,t,tid,size,jcols[tid],sidd[tid],ts[tid]))
                 for i,col in enumerate(t.columns):
-                    f = open("%s/iteration%02d/%scsample_%s_%s_%s.dump" % (fprefix,iteration,dprefix,size,t.tid,col.cid),"w")
+                    f = open("%s/iteration%02d/%scsample_%s_%s_%s.dump" % (fprefix,iteration,dprefix,size,t.tid,col.cid),"wb")
                     if len(np_array) > 0:
                         a = array.array("I",np_array.T[i])
                         a.tofile(f)

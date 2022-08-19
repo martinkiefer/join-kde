@@ -85,11 +85,11 @@ def generateQueryData(cnf,query,queries,fprefix,dprefix,iterations):
                 os.makedirs("%s/iteration%02d" % (fprefix,iteration))
             np_array = np.array(generateQueriesAndTrueSel(cur,t,queries))
             for i,col in enumerate(t.columns):
-                f = open("%s/iteration%02d/%stable_p_%s_%s.dump" % (fprefix,iteration,dprefix,t.tid,col.cid),"w")
+                f = open("%s/iteration%02d/%stable_p_%s_%s.dump" % (fprefix,iteration,dprefix,t.tid,col.cid),"wb")
                 a = array.array("I",np_array.T[i])
                 a.tofile(f)
                 f.close()
-            f = open("%s/iteration%02d/%stable_%s_true.dump" % (fprefix,iteration,dprefix,t.tid),"w")
+            f = open("%s/iteration%02d/%stable_%s_true.dump" % (fprefix,iteration,dprefix,t.tid),"wb")
             a = array.array("I",np_array.T[i+1])
             a.tofile(f)
             f.close()

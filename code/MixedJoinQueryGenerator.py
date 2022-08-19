@@ -349,7 +349,7 @@ def generateQueryData(cnf,query,training_queries,training_fprefix,training_dpref
         if len(pvals) >0:
             pa = np.array(pvals).astype(int) 
             for j,(t,c) in enumerate(pcolsf):
-                f = open("%s/iteration%02d/%sjoin_p_%s_%s.dump" % (test_fprefix,iteration,test_dprefix,t,c),"w")
+                f = open("%s/iteration%02d/%sjoin_p_%s_%s.dump" % (test_fprefix,iteration,test_dprefix,t,c),"wb")
                 a = array.array("I",pa.T[j])
                 a.tofile(f)
                 f.close()
@@ -357,7 +357,7 @@ def generateQueryData(cnf,query,training_queries,training_fprefix,training_dpref
         if len(lvals) > 0:
             la = np.array(lvals).astype(int)
             for j,(t,c) in enumerate(rcolsf):
-                f = open("%s/iteration%02d/%sjoin_l_%s_%s.dump" % (test_fprefix,iteration,test_dprefix,t,c),"w")
+                f = open("%s/iteration%02d/%sjoin_l_%s_%s.dump" % (test_fprefix,iteration,test_dprefix,t,c),"wb")
                 a = array.array("I",la.T[j])
                 a.tofile(f)
                 f.close()
@@ -365,13 +365,13 @@ def generateQueryData(cnf,query,training_queries,training_fprefix,training_dpref
         if len(uvals) >0:
             ua = np.array(uvals).astype(int) 
             for j,(t,c) in enumerate(rcolsf):
-                f = open("%s/iteration%02d/%sjoin_u_%s_%s.dump" % (test_fprefix,iteration,test_dprefix,t,c),"w")
+                f = open("%s/iteration%02d/%sjoin_u_%s_%s.dump" % (test_fprefix,iteration,test_dprefix,t,c),"wb")
                 a = array.array("I",ua.T[j])
                 a.tofile(f)
                 f.close()
 
         cards = np.array(cards).astype(int)
-        f = open("%s/iteration%02d/%sjoin_true.dump" % (test_fprefix,iteration,test_dprefix),"w")
+        f = open("%s/iteration%02d/%sjoin_true.dump" % (test_fprefix,iteration,test_dprefix),"wb")
         a = array.array("I",cards)
         a.tofile(f)
         f.close()
@@ -387,7 +387,7 @@ def generateQueryData(cnf,query,training_queries,training_fprefix,training_dpref
         if len(pvals) >0:
             pa = np.array(pvals).astype(int) 
             for j,(t,c) in enumerate(pcolsf):
-                f = open("%s/iteration%02d/%sjoin_p_%s_%s.dump" % (training_fprefix,iteration,training_dprefix,t,c),"w")
+                f = open("%s/iteration%02d/%sjoin_p_%s_%s.dump" % (training_fprefix,iteration,training_dprefix,t,c),"wb")
                 a = array.array("I",pa.T[j])
                 a.tofile(f)
                 f.close()
@@ -395,7 +395,7 @@ def generateQueryData(cnf,query,training_queries,training_fprefix,training_dpref
         if len(lvals) > 0:
             la = np.array(lvals).astype(int)
             for j,(t,c) in enumerate(rcolsf):
-                f = open("%s/iteration%02d/%sjoin_l_%s_%s.dump" % (training_fprefix,iteration,training_dprefix,t,c),"w")
+                f = open("%s/iteration%02d/%sjoin_l_%s_%s.dump" % (training_fprefix,iteration,training_dprefix,t,c),"wb")
                 a = array.array("I",la.T[j])
                 a.tofile(f)
                 f.close()
@@ -403,13 +403,13 @@ def generateQueryData(cnf,query,training_queries,training_fprefix,training_dpref
         if len(uvals) >0:
             ua = np.array(uvals).astype(int) 
             for j,(t,c) in enumerate(rcolsf):
-                f = open("%s/iteration%02d/%sjoin_u_%s_%s.dump" % (training_fprefix,iteration,training_dprefix,t,c),"w")
+                f = open("%s/iteration%02d/%sjoin_u_%s_%s.dump" % (training_fprefix,iteration,training_dprefix,t,c),"wb")
                 a = array.array("I",ua.T[j])
                 a.tofile(f)
                 f.close()
 
         cards = np.array(cards).astype(int)
-        f = open("%s/iteration%02d/%sjoin_true.dump" % (training_fprefix,iteration,training_dprefix),"w")
+        f = open("%s/iteration%02d/%sjoin_true.dump" % (training_fprefix,iteration,training_dprefix),"wb")
         a = array.array("I",cards)
         a.tofile(f)
         f.close()

@@ -5,7 +5,7 @@ Proof of concept for join cardinality estimation using GPU-accelerated Kernel De
 1. The GNU Compiler Collection (GCC) (gcc, g++).
 2. A recent version of Postgres. We used Postgres 9.6.3.
 3. A recent version of the nlopt library. We used version 2.4.2.
-4. Python 2.7 and the following modules:
+4. Python3 and the following modules:
   *  scipy
   *  numpy
   *  psycopg2

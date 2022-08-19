@@ -53,7 +53,7 @@ def generateSamples(cnf,query,sample_sizes,fprefix,dprefix,iterations):
             j = 0
             for i,col in enumerate(cols):
                 for c in col:
-                    f = open("%s/iteration%02d/%sjsample_%s_%s_%s.dump" % (fprefix,iteration,dprefix,size,query.tables[i].tid,query.tables[i].columns[c].cid),"w")
+                    f = open("%s/iteration%02d/%sjsample_%s_%s_%s.dump" % (fprefix,iteration,dprefix,size,query.tables[i].tid,query.tables[i].columns[c].cid),"wb")
                     a = array.array("I",np_array.T[j])
                     a.tofile(f)
                     f.close()

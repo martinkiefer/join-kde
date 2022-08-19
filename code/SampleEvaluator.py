@@ -8,7 +8,8 @@ import Utils
 import sys
 from collections import defaultdict
 import copy
-import cPickle
+import pickle
+from functools import reduce
 
 #A sort of columnar join
 class JoinNode:
@@ -48,9 +49,9 @@ class JoinNode:
         res = defaultdict(list)
         for i,v in enumerate(lvals):
             for vh in ht[v]:
-                for k,v in rtids.iteritems():
+                for k,v in rtids.items():
                     res[k].append(v[vh])
-                for k,v in ltids.iteritems():
+                for k,v in ltids.items():
                     res[k].append(v[i])       
         return res
     
@@ -105,7 +106,7 @@ def getMatchingOffsetsInclusiveRange(query, table, column, iteration, ss, l,u, t
         
     
 def gather(vals,indices):
-    return map(lambda x : vals[x],indices)                
+    return [vals[x] for x in indices]                
                 
 def constructJoinGraph(query,iteration,sample_sizes,test):
     tables = [set() for _ in query.joins]
@@ -168,10 +169,10 @@ if __name__ == '__main__':
 		test = int(sys.argv[tabs+2])
 		
 		with open("./stats.pick",'r') as f:
-			ts,_ = cPickle.load(f)
+			ts,_ = pickle.load(f)
 		
 		true_cardinalities = Utils.readCol("iteration%02d/test_join_true.dump" % iteration,test)
-		scale = reduce(lambda x,y : x*float(y[0])/float(y[1]),zip(ts.values(),sample_sizes),1.0)
+		scale = reduce(lambda x,y : x*float(y[0])/float(y[1]),list(zip(list(ts.values()),sample_sizes)),1.0)
 		
 		g = constructJoinGraph(query,iteration,sample_sizes,test)    
 		

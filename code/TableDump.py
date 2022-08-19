@@ -23,7 +23,7 @@ def dumpTables(cnf,query,fprefix,dprefix):
     for t in query.tables:
         np_array = np.array(dumpTable(cur,t))
         for i,col in enumerate(t.columns):
-            f = open("%s/%stable_%s_%s.dump" % (fprefix,dprefix,t.tid,col.cid),"w")
+            f = open("%s/%stable_%s_%s.dump" % (fprefix,dprefix,t.tid,col.cid),"wb")
             a = array.array("I",np_array.T[i])
             a.tofile(f)
             f.close()

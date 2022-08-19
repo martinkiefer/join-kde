@@ -7,7 +7,7 @@ Created on Mon Oct 24 16:48:31 2016
 import Utils 
 import sys
 from collections import defaultdict
-import cPickle
+import pickle
 
         
 class JoinSampleScan:
@@ -61,7 +61,7 @@ def getMatchingOffsetsInclusiveRange(query, table, column, iteration, ss, l,u, t
         
     
 def gather(vals,indices):
-    return map(lambda x : vals[x],indices)                
+    return [vals[x] for x in indices]                
                 
     
 #Quick Bernoulli Estimator
@@ -79,7 +79,7 @@ with open('./descriptor.json', 'r') as f:
     test = int(sys.argv[3])
     
     with open("./jstats.pick",'r') as f:
-        ts,_ = cPickle.load(f)
+        ts,_ = pickle.load(f)
     
     true_cardinalities = Utils.readCol("iteration%02d/test_join_true.dump" % iteration,test)
     scale = float(ts)/sample_size

@@ -1,5 +1,4 @@
 #!/usr/bin/bash
-
-python2 prepare.py
+python prepare.py
 bash compile.sh
 bash run.sh
