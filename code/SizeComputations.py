@@ -14,7 +14,7 @@ def ComputeAGMSSize(query,skn):
     
     size_in_bit += skn*(len(query.tables)-1)*33
     
-    return (size_in_bit-1)/8+1
+    return (size_in_bit-1)//8+1
     #We need a 33-bit seed for every column
 
 
@@ -24,7 +24,7 @@ def ComputeAGMSSkn(query,size,local_size = 64):
     nicols = reduce(lambda x,y : x+len(y),icols,0)
     #return size / (32 * len(query.tables)  + nicols*33 + (len(query.tables)-1)*33)
     
-    size = (size / (32 * len(query.tables)  + nicols*33 + (len(query.tables)-1)*33))
+    size = (size // (32 * len(query.tables)  + nicols*33 + (len(query.tables)-1)*33))
     return size
 
 def ComputeGPUKDESize(query,tuples):
@@ -36,14 +36,14 @@ def ComputeGPUKDESize(query,tuples):
     size_in_bit += 32*nicols*tuples
     size_in_bit += 32*len(query.joins)*tuples
     
-    return size_in_bit/8
+    return size_in_bit//8
     
 def ComputeGPUKDESampleSize(query,size):
     size *= 8
     icols = Utils.generateInvariantColumns(query)
     nicols = reduce(lambda x,y : x+len(y),icols,0)
     
-    return size/(32*nicols+32*len(query.joins))
+    return size//(32*nicols+32*len(query.joins))
     
     
     
@@ -52,12 +52,12 @@ def ComputeGPUJKDESize(query,atuples):
     
     for tid,t in enumerate(query.tables):
         size_in_bit += len(t.columns)*32*atuples[tid]
-    return size_in_bit / 8
+    return size_in_bit // 8
  
 def ComputeGPUJKDESampleSize(query,sizes, local_size = 64):
     sizes = sizes*8
     factors = np.array([len(x.columns)*32 for x in query.tables])
-    sizes = (sizes/factors)
+    sizes = (sizes//factors)
     return sizes
 
 def ComputeSumTableSize(query,stats):    
