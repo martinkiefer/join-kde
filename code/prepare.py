@@ -93,7 +93,7 @@ for i,estimator in enumerate(descriptor.estimators):
         #For now, its sufficient to pickle the stats
         for ss in pt_sizes:
             for it in range(0,descriptor.iterations):
-                rf.write("python2 ./CountSampleEvaluator.py %s %s %s >> %s\n" % (' '.join(SizeComputations.ComputeGPUJKDESampleSize(descriptor.query_descriptor,ss).astype(str)), it, estimator.test, "%s_Sample.results" % i))     
+                rf.write("python ./CountSampleEvaluator.py %s %s %s >> %s\n" % (' '.join(SizeComputations.ComputeGPUJKDESampleSize(descriptor.query_descriptor,ss).astype(str)), it, estimator.test, "%s_Sample.results" % i))     
         with open("./stats.pick",'w') as f:
             pickle.dump(stats,f)
     elif estimator.estimator == "GPUJoinSample":
@@ -122,13 +122,13 @@ for i,estimator in enumerate(descriptor.estimators):
                 rf.write("./%s %s %s >> %s\n" % ("%s_AGMS" % i, SizeComputations.ComputeAGMSSkn(descriptor.query_descriptor,ss), it, "%s_AGMS.results" % i))     
     elif estimator.estimator == "Postgres":
         for it in range(0,descriptor.iterations):
-            rf.write("python2 ./PostgresEvaluator.py %s %s >> %s_Postgres.results\n" % (it,estimator.test,i))
+            rf.write("python ./PostgresEvaluator.py %s %s >> %s_Postgres.results\n" % (it,estimator.test,i))
     elif estimator.estimator == "JoinSample":
         if jstats == None:
             jstats = Utils.retreiveJoinStatistics(descriptor.pg_conf,descriptor.query_descriptor)
         for ss in descriptor.model_sizes:
             for it in range(0,descriptor.iterations):
-                rf.write("python2 ./JoinSampleEvaluator.py %s %s %s >> %s\n" % (SizeComputations.ComputeGPUKDESampleSize(descriptor.query_descriptor,ss), it, estimator.test, "%s_JoinSample.results" % i))            
+                rf.write("python ./JoinSampleEvaluator.py %s %s %s >> %s\n" % (SizeComputations.ComputeGPUKDESampleSize(descriptor.query_descriptor,ss), it, estimator.test, "%s_JoinSample.results" % i))            
         with open("./jstats.pick",'w') as f:
             pickle.dump(jstats,f)
     elif estimator.estimator == "Sample":
@@ -137,7 +137,7 @@ for i,estimator in enumerate(descriptor.estimators):
         #For now, its sufficient to pickle the stats
         for ss in pt_sizes:
             for it in range(0,descriptor.iterations):
-                rf.write("python2 ./SampleEvaluator.py %s %s %s >> %s\n" % (' '.join(SizeComputations.ComputeGPUJKDESampleSize(descriptor.query_descriptor,ss).astype(str)), it, estimator.test, "%s_Sample.results" % i))     
+                rf.write("python ./SampleEvaluator.py %s %s %s >> %s\n" % (' '.join(SizeComputations.ComputeGPUJKDESampleSize(descriptor.query_descriptor,ss).astype(str)), it, estimator.test, "%s_Sample.results" % i))     
         with open("./stats.pick",'w') as f:
             pickle.dump(stats,f)
     else:
