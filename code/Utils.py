@@ -33,7 +33,7 @@ def json2obj(data):
     
 def readCol(fname,n):
     a=array.array('I')
-    f=open(fname)
+    f=open(fname, 'rb')
     a.fromfile(f, n)
     f.close()
 
