@@ -7,34 +7,36 @@ def generatePreamble(f):
     print("typedef double T;", file=f)
     print("""
 int parity(unsigned int x) {
-   unsigned int y;
-   y = x ^ (x >> 1);
-   y = y ^ (y >> 2);
-   y = y ^ (y >> 4);
-   y = y ^ (y >> 8);
-   y = y ^ (y >>16);
-   return y & 1;
+    return popcount(x) & 1;
 }
 
 int nonlinear_h(unsigned int x) {
-    return parity((x >> 0) | (x >> 1));
+    return parity(((x >> 0) & (x >> 1)) & 0x55555555);
 }
 
-int is_set(unsigned int x, unsigned int pos) {
+unsigned int is_set(unsigned int x, unsigned int pos) {
     return (x >> pos) & 1;
 }
 
 
-int ech3(unsigned int v, unsigned int seed, int sbit){
+int ech3(unsigned int v, unsigned int seed, unsigned int sbit){
     //First we compute the bitwise AND between the seed and the value
     //Aaaand here comes the parity
-    int res = (parity(v & seed) != nonlinear_h(v)) != sbit ; 
+    int res = parity(v & seed) ^ nonlinear_h(v) ^ sbit ; 
     return 2*res-1; 
 }
 
-int range_ech3(unsigned int u, unsigned int l, unsigned int seed, int sbit){
-    int ctr = 0;   
-    for(unsigned int i = l; i <= u; i++) ctr +=ech3(i, seed, sbit);
+int range_ech3(unsigned int u, unsigned int l, unsigned int seed, unsigned int sbit){
+    int ctr= 0;
+    u++;
+    while(l < u){
+        unsigned int j = min(ctz(l) >> 1, 16-clz(u-l)/2-1);
+        unsigned int q = l >> 2*j;
+        unsigned int ut = (q+1) << 2*j;
+        int zeros = 2*parity(seed & (seed >> 1) & ((0x55555555 >> (32-j*2))*(j!=0))) - 1;
+        ctr += ech3(l, seed, sbit) * -zeros * (1 << j);
+        l = ut;
+    }
     return ctr;
 }
     """, file=f)
@@ -229,28 +231,18 @@ def generateSketchConstructionCode(f,query,ts,local_size=32):
             print("    __global unsigned int* j%s_ls, __global unsigned int* j%s_ss," % (j,j), file=f)
         print("    __global long* sketches) {", file=f)
         
-        for cid, cols in enumerate(tab.columns):
-            print("    __local unsigned int cache_c%s[%s];" % (cid,local_size), file=f)
         print("    for(unsigned int offset = 0; offset < skn; offset += get_global_size(0)){", file=f) 
+        print("            if(get_global_id(0)+offset >= skn) continue;", file=f)
         print("           long counter = 0;", file=f)
         for cid in icols[tid]:
-            print("           unsigned int my_c%s_ls = (get_global_id(0)+offset < skn) ? c%s_ls[get_global_id(0)+offset] : 0; int my_c%s_ss = (get_global_id(0)+offset < skn) ? is_set(c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32) : 0;" % (cid,cid,cid,cid), file=f)
+            print("           unsigned int my_c%s_ls = c%s_ls[get_global_id(0)+offset]; int my_c%s_ss = is_set(c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32);" % (cid,cid,cid,cid), file=f)
         for j,p1,p2 in pairs:
-            print("           unsigned int my_j%s_ls = (get_global_id(0)+offset < skn) ? j%s_ls[get_global_id(0)+offset] : 0; int my_j%s_ss = (get_global_id(0)+offset < skn) ? is_set(j%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset)%% 32) : 0;" % (j,j,j,j), file=f)
+            print("           unsigned int my_j%s_ls = j%s_ls[get_global_id(0)+offset]; int my_j%s_ss = is_set(j%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset)%% 32);" % (j,j,j,j), file=f)
     
-        print("        for(unsigned int i = 0; i < %s; i += get_local_size(0)){" % (ts[tid]), file=f)
-        print("            barrier(CLK_LOCAL_MEM_FENCE);", file=f)
-        print("            if(i + get_local_id(0) < %s) {" % (ts[tid]), file=f)
-        for cid, cols in enumerate(tab.columns):
-            print("                cache_c%s[get_local_id(0)] = c%s[i+get_local_id(0)];" % (cid,cid), file=f)
-        print("            }", file=f)
-        print("            barrier(CLK_LOCAL_MEM_FENCE);", file=f)
-        print("            if(get_global_id(0)+offset >= skn) continue;", file=f)
-        print("            for(unsigned int j = 0; j < get_local_size(0) && i+j < %s; j++){" % ts[tid], file=f)
-        print("                counter += %s * %s;" % (" * ".join(["ech3(cache_c%s[j],my_c%s_ls,my_c%s_ss)" % (x,x,x) for x in icols[tid]])," * ".join(["ech3(cache_c%s[j],my_j%s_ls,my_j%s_ss)" % (x[1][1],x[0],x[0]) for x in pairs])), file=f)
-        print("            }", file=f)
+        print("        for(unsigned int i = 0; i < %s; i += 1){" % (ts[tid]), file=f)
+        print("                counter += %s * %s;" % (" * ".join(["ech3(c%s[i],my_c%s_ls,my_c%s_ss)" % (x,x,x) for x in icols[tid]])," * ".join(["ech3(c%s[i],my_j%s_ls,my_j%s_ss)" % (x[1][1],x[0],x[0]) for x in pairs])), file=f)
         print("        }", file=f)
-        print("        if(get_global_id(0)+offset < skn) sketches[get_global_id(0)+offset] = counter;", file=f)
+        print("        sketches[get_global_id(0)+offset] = counter;", file=f)
         print("    }", file=f)    
         print("}", file=f)    
         print(file=f)
