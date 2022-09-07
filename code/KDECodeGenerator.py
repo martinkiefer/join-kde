@@ -403,6 +403,8 @@ int main( int argc, const char* argv[] ){
         assert(frc >=0);    
     
     """ % (len(kernels),1000,"1e-4","1e-3"), file=cf)
+            for cid,kernel in enumerate(kernels):
+                print("    p->bw_c%s = bw[%s];" % (cid,cid), file=cf)
 
     
             #for cid,col in enumerate(kernels):
