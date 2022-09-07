@@ -192,6 +192,7 @@ def generateGPUJKDELocalTraining(cf,query,estimator, cu_factor):
                 #print >>cf, "    p.estk%s = pr.create_kernel(\"est_t%s\");" % (tid,tid)   
                 print("    p.local_t%s = 64;" % tid, file=cf)
                 print("    p.global_t%s = std::min((size_t) p.ctx.get_device().compute_units()*%s , ((p.ss%s-1)/p.local_t%s+1)*p.local_t%s);" % (tid,cu_factortid,tid,tid), file=cf)
+                print("    p.localt_t%s = std::min(p.local_t%s,p.global_t%s);" % (tid, tid, tid), file=cf)
                 print("    p.gradk%s = pr.create_kernel(\"grad_t%s\");" % (tid,tid), file=cf)   
                 print("    p.est_t%s = compute::vector<double>(p.global_t%s, p.ctx);" % (tid,tid), file=cf) 
                 print("    std::string true_t%s_string = iteration_stream.str() + \"/training_table_%s_true.dump\";" % (tid,query.tables[tid].tid), file=cf)
@@ -344,6 +345,7 @@ int main( int argc, const char* argv[] ){
         """, file=cf)
         print("    p.local = 64;", file=cf)
         print("    p.global = std::min((size_t) p.ctx.get_device().compute_units()*%s, ((p.ss-1)/p.local+1)*p.local);" % cu_factor, file=cf)
+        print("    p.local = std::min(p.global, p.local);", file=cf)
         print("    p.gradk = pr.create_kernel(\"grad\");", file=cf)
         print("    p.estk = pr.create_kernel(\"est\");", file=cf)
         print("    p.out = compute::vector<double>(p.global, p.ctx);", file=cf)
@@ -514,16 +516,7 @@ def generateTableObjectiveGrad(f,tid,query,estimator):
         print("    if(grad != NULL)grad[%s] = 0.0;" % (cid), file=f)
     print("    double objective = 0.0;", file=f)
     print("    double est= 0.0;", file=f)
-    print("    int first = 1;", file=f)
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.training, file=f)
-    print("        if(first ", end=' ', file=f)
-    if estimator.kernels[tid][cid] == "GaussRange":
-        print("|| p->u_t%s_c%s[i] != p->u_t%s_c%s[i-1]" % (tid, cid, tid, cid), end=' ', file=f)
-        print("|| p->l_t%s_c%s[i] != p->l_t%s_c%s[i-1]" % (tid, cid, tid, cid), end=' ', file=f)
-    else:
-        print("|| p->p_t%s_c%s[i] != p->p_t%s_c%s[i]" % (tid, cid,tid,cid), end=' ', file=f)
-    print("){", file=f)
-    print("            first = 0;", file=f)
     print("            est =  est_grad_t%s(p, tmp_grad " % tid, end=' ', file=f)
     for cid,column in enumerate(query.tables[tid].columns):
         if estimator.kernels[tid][cid] == "GaussRange":
@@ -531,7 +524,6 @@ def generateTableObjectiveGrad(f,tid,query,estimator):
         else:
             print(", p->p_t%s_c%s[i] " % (tid,cid), end=' ', file=f)
     print(");", file=f)
-    print("        }", file=f)
     print("        unsigned int trues =  p->true_t%s[i];" % tid, file=f)
     if estimator.objective == "squared":
         print("        objective += (est-trues)*(est-trues)/%s;" % estimator.training, file=f)

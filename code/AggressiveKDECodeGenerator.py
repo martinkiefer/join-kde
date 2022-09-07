@@ -1,7 +1,6 @@
  #Code generator for gauss kernel
 import Utils
 from functools import reduce
-local_size = 64
 from KDECodeGenerator import GaussKernel
 from KDECodeGenerator import CategoricalKernel
 import copy
@@ -615,16 +614,6 @@ def generateGPUJKDEObjective(f,query,estimator):
     if hasattr(estimator, 'limit_opt'):
         print("    if(std::chrono::duration_cast<std::chrono::minutes>(std::chrono::high_resolution_clock::now()-opt_start).count() > %s)" % estimator.limit_opt, file=f)
         print("        nlopt_force_stop(*(p->opt));", file=f)
-    print("        if(first ", end=' ', file=f)
-    for x, cols in enumerate(icols):
-        for y in cols:
-            if estimator.kernels[x][y] == "GaussRange":
-                print("|| p->j_training_u_t%s_c%s[i] !=  p->j_training_u_t%s_c%s[i-1]" % (x,y,x,y), file=f)
-                print("|| p->j_training_l_t%s_c%s[i] !=  p->j_training_l_t%s_c%s[i-1]" % (x,y,x,y), end=' ', file=f)
-            else:
-                print("|| p->j_training_p_t%s_c%s[i] != p->j_training_p_t%s_c%s[i-1]" % (x,y,x,y), end=' ', file=f)
-    print("){", file=f)
-    print("            first = 0;", file=f)
     print("            est =  join_estimate_instance(p ", end=' ', file=f)
     for x, cols in enumerate(icols):
         for y in cols: 
@@ -633,7 +622,6 @@ def generateGPUJKDEObjective(f,query,estimator):
             else:
                 print(", p->j_training_p_t%s_c%s[i] " % (x,y), end=' ', file=f)
     print(");", file=f)
-    print("        }", file=f)
     print("        unsigned int trues =  p->j_training_cardinality[i];", file=f)
 
     if estimator.objective == "squared":
@@ -777,6 +765,7 @@ def generateGPUJKDEEstimateFunction(f, nodes, query, estimator, limit, stats, cu
 
      print("    size_t local = 64;", file=f)
      print("    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*%s , ((rss_t%s-1)/local+1)*local);" % (cu_factor,tids[0]), file=f)
+     print("    local = std::min(local,global);", file=f)
 
      print("    p->estimate.set_args(", end=' ', file=f)
 

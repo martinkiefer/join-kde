@@ -125,6 +125,7 @@ int main( int argc, const char* argv[] ){
         print("    p.ss = atoi(argv[1]);", file=cf)
         print("    p.local = 64;", file=cf)
         print("    p.global = std::min((size_t) p.ctx.get_device().compute_units()*%s, ((p.ss-1)/p.local+1)*p.local);" % cu_factor, file=cf)
+        print("    p.local = std::min(p.local,p.global);", file=cf)
         print("    p.ts = %s;" % (ts), file=cf)
         for cid,kernel in enumerate(qtype):
             print("    std::stringstream s_c%s_stream ;" % (cid), file=cf)

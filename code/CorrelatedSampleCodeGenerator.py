@@ -1,6 +1,5 @@
  #Code generator for gauss kernel
 import Utils
-local_size = 64
 from KDECodeGenerator import generatePreamble
 from SampleCodeGenerator import generateBinarySearchCode
 from SampleCodeGenerator import generateCIncludes
@@ -147,6 +146,7 @@ def generateGPUSampleEstimateFunction(f, nodes, query, estimator, limit, stats, 
 
      print("    size_t local = 64;", file=f)
      print("    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*%s, ((rss_t%s-1)/local+1)*local);" % (cu_factor,tids[0]), file=f)
+     print("    local = std::min(local,global);", file=f)
      print("    p->estimate.set_args(", end=' ', file=f)
 
      for x, t in enumerate(tids):
@@ -182,28 +182,8 @@ def generateCSTestWrapper(f,query,estimator):
     print("    double objective = 0.0;", file=f)
     print("    double trues = 0.0;", file=f)
     print("    double est = 0.0;", file=f)
-    print("    int first = 1;", file=f)
-
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.test, file=f)
     print("        auto begin = std::chrono::high_resolution_clock::now();", file=f)
-    print("        if(first ", end=' ', file=f)
-    for i,indices in enumerate(cols):
-    #Start with computing the invariant contributions
-        if len(indices) != 0:
-            for j in indices:
-                if query.tables[i].columns[j].type == "range":
-                    print("|| p->j_l_t%s_c%s[i] != p->j_l_t%s_c%s[i-1]" % (i,j,i,j), end=' ', file=f)
-                    print("|| p->j_u_t%s_c%s[i] != p->j_u_t%s_c%s[i-1]" % (i,j,i,j), end=' ', file=f)
-                elif query.tables[i].columns[j].type == "point":
-                    print("|| p->j_p_t%s_c%s[i] != p->j_p_t%s_c%s[i-1] " % (i,j,i,j), end=' ', file=f)
-                else:
-                    raise Exception("Unknown ctype.")
-    print("){", file=f)
-    if hasattr(estimator, 'look_behind'):
-        if estimator.look_behind:
-            print("            first = 0;", file=f)
-    else:
-        print("            first = 0;", file=f)
     print("            est = join_estimate_instance(p", end=' ', file=f)
     for i,indices in enumerate(cols):
     #Start with computing the invariant contributions
@@ -217,7 +197,6 @@ def generateCSTestWrapper(f,query,estimator):
                 else:
                     raise Exception("Unknown ctype.")
     print(");", file=f)
-    print("        }", file=f)
     print("        auto end = std::chrono::high_resolution_clock::now();", file=f)
     print("        trues = p->j_test_cardinality[i];", file=f)
     print("        objective += (est-trues)*(est-trues);", file=f)

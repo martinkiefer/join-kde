@@ -283,6 +283,7 @@ def generateGPUSampleEstimateFunction(f, nodes, query, estimator, limit, stats, 
 
      print("    size_t local = 64;", file=f)
      print("    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*%s , ((rss_t%s-1)/local+1)*local);" % (cu_factor,tids[0]), file=f)
+     print("    local = std::min(local,global);", file=f)
      print("    p->estimate.set_args(", end=' ', file=f)
 
      for x, t in enumerate(tids):
