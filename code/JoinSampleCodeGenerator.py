@@ -229,24 +229,8 @@ def generateGPUJoinSampleTestWrapper(f,query,estimator,qtypes):
     print("double join_test(parameters* p){", file=f)
     print("    double objective = 0.0;", file=f)
     print("    double est = 0.0;", file=f)
-    print("    int first = 1;", file=f)
-
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.test, file=f)
     print("       auto begin = std::chrono::high_resolution_clock::now();", file=f)
-    print("        if(first ", end=' ', file=f)
-
-    for cid, qtype in enumerate(qtypes):
-        if qtype == "range":
-            print("|| p->test_l_c%s[i] != p->test_l_c%s[i-1] " % (cid,cid), end=' ', file=f)
-            print("|| p->test_u_c%s[i] != p->test_u_c%s[i-1] " % (cid,cid), end=' ', file=f)
-        else:
-            print("|| p->test_p_c%s[i] != p->test_p_c%s[i-1] " % (cid,cid), end=' ', file=f)
-    print("){", file=f)
-    if hasattr(estimator, 'look_behind'):
-        if estimator.look_behind:
-            print("            first = 0;", file=f)
-    else:
-        print("            first = 0;", file=f)
     print("            est = join_estimate_instance(p", end=' ', file=f)
 
     for cid, qtype in enumerate(qtypes):
@@ -256,7 +240,6 @@ def generateGPUJoinSampleTestWrapper(f,query,estimator,qtypes):
         else:
             print(", p->test_p_c%s[i]" % (cid), end=' ', file=f)
     print(");", file=f)
-    print("        }", file=f)
     print("        auto end = std::chrono::high_resolution_clock::now();", file=f)
     print("        double trues = p->test_cardinality[i];", file=f)
     print("        objective += (est-trues)*(est-trues);", file=f)

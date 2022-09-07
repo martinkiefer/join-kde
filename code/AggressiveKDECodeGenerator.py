@@ -601,7 +601,6 @@ def generateGPUJKDEObjective(f,query,estimator):
             print("    p->bw_t%s_c%s = bw[%s];" % (x,y,i), file=f)
             i += 1
 
-    print("    int first = 1;", file=f)
     print("    double est = 0.0;", file=f)
     if estimator.objective == "squared":
         print("    double objective = 0.0;", file=f)

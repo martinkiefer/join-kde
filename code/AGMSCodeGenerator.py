@@ -7,36 +7,34 @@ def generatePreamble(f):
     print("typedef double T;", file=f)
     print("""
 int parity(unsigned int x) {
-    return popcount(x) & 1;
+   unsigned int y;
+   y = x ^ (x >> 1);
+   y = y ^ (y >> 2);
+   y = y ^ (y >> 4);
+   y = y ^ (y >> 8);
+   y = y ^ (y >>16);
+   return y & 1;
 }
 
 int nonlinear_h(unsigned int x) {
-    return parity(((x >> 0) & (x >> 1)) & 0x55555555);
+    return parity((x >> 0) | (x >> 1));
 }
 
-unsigned int is_set(unsigned int x, unsigned int pos) {
+int is_set(unsigned int x, unsigned int pos) {
     return (x >> pos) & 1;
 }
 
 
-int ech3(unsigned int v, unsigned int seed, unsigned int sbit){
+int ech3(unsigned int v, unsigned int seed, int sbit){
     //First we compute the bitwise AND between the seed and the value
     //Aaaand here comes the parity
-    int res = parity(v & seed) ^ nonlinear_h(v) ^ sbit ; 
+    int res = (parity(v & seed) != nonlinear_h(v)) != sbit ; 
     return 2*res-1; 
 }
 
-int range_ech3(unsigned int u, unsigned int l, unsigned int seed, unsigned int sbit){
-    int ctr= 0;
-    u++;
-    while(l < u){
-        unsigned int j = min(ctz(l) >> 1, 16-clz(u-l)/2-1);
-        unsigned int q = l >> 2*j;
-        unsigned int ut = (q+1) << 2*j;
-        int zeros = 2*parity(seed & (seed >> 1) & ((0x55555555 >> (32-j*2))*(j!=0))) - 1;
-        ctr += ech3(l, seed, sbit) * -zeros * (1 << j);
-        l = ut;
-    }
+int range_ech3(unsigned int u, unsigned int l, unsigned int seed, int sbit){
+    int ctr = 0;   
+    for(unsigned int i = l; i <= u; i++) ctr +=ech3(i, seed, sbit);
     return ctr;
 }
     """, file=f)
@@ -113,6 +111,7 @@ def generateSketchConstructionCCode(f,query,ts,local_size=64,cu_factor=2048):
     print("void sketch_contruction(parameters* p){", file=f)
     print("    size_t local = %s;" % local_size, file=f) 
     print("    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*%s , ((p->skn-1)/local+1)*local);" % cu_factor, file=f)
+    print("    local = std::min(local,global);", file=f)
     for tid, tab in enumerate(query.tables):
         cs = ",".join(["p->t%s_c%s" % (tid,x) for x in range(0,len(tab.columns))])            
         cseeds = ",".join(["p->t%s_c%s_lseed, p->t%s_c%s_sseed" % (tid,x,tid,x) for x in icols[tid]])
@@ -144,6 +143,7 @@ def generateEstimateCCode(f,query,cu_factor=2048):
     #Aaaaaaaaaand construct the estimation kernel
     print("    size_t local = 64;", file=f)
     print("    size_t global = std::min((size_t) p->ctx.get_device().compute_units()*2048 , ((p->skn-1)/local+1)*local);", file=f)
+    print("    local = std::min(local,global);", file=f)
     print("    p->multiply_sketches.set_args(", end=' ', file=f)
     for tid, tab in enumerate(query.tables):
         print("p->sk_t%s, " % tid, end=' ', file=f)
@@ -173,7 +173,6 @@ def generateTestWrapper(f,query,estimator):
     print("    double objective = 0.0;", file=f)
     print("    double trues = 0.0;", file=f)
     print("    double est = 0.0;", file=f)
-    print("    int first = 1;", file=f)
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.test, file=f)
     print("        auto begin = std::chrono::high_resolution_clock::now();", file=f)
     print("            est = estimate(p", end=' ', file=f)
@@ -212,18 +211,28 @@ def generateSketchConstructionCode(f,query,ts,local_size=32):
             print("    __global unsigned int* j%s_ls, __global unsigned int* j%s_ss," % (j,j), file=f)
         print("    __global long* sketches) {", file=f)
         
+        for cid, cols in enumerate(tab.columns):
+            print("    __local unsigned int cache_c%s[%s];" % (cid,local_size), file=f)
         print("    for(unsigned int offset = 0; offset < skn; offset += get_global_size(0)){", file=f) 
-        print("            if(get_global_id(0)+offset >= skn) continue;", file=f)
         print("           long counter = 0;", file=f)
         for cid in icols[tid]:
-            print("           unsigned int my_c%s_ls = c%s_ls[get_global_id(0)+offset]; int my_c%s_ss = is_set(c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32);" % (cid,cid,cid,cid), file=f)
+            print("           unsigned int my_c%s_ls = (get_global_id(0)+offset < skn) ? c%s_ls[get_global_id(0)+offset] : 0; int my_c%s_ss = (get_global_id(0)+offset < skn) ? is_set(c%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset) %% 32) : 0;" % (cid,cid,cid,cid), file=f)
         for j,p1,p2 in pairs:
-            print("           unsigned int my_j%s_ls = j%s_ls[get_global_id(0)+offset]; int my_j%s_ss = is_set(j%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset)%% 32);" % (j,j,j,j), file=f)
+            print("           unsigned int my_j%s_ls = (get_global_id(0)+offset < skn) ? j%s_ls[get_global_id(0)+offset] : 0; int my_j%s_ss = (get_global_id(0)+offset < skn) ? is_set(j%s_ss[(get_global_id(0)+offset)/32],(get_global_id(0)+offset)%% 32) : 0;" % (j,j,j,j), file=f)
     
-        print("        for(unsigned int i = 0; i < %s; i += 1){" % (ts[tid]), file=f)
-        print("                counter += %s * %s;" % (" * ".join(["ech3(c%s[i],my_c%s_ls,my_c%s_ss)" % (x,x,x) for x in icols[tid]])," * ".join(["ech3(c%s[i],my_j%s_ls,my_j%s_ss)" % (x[1][1],x[0],x[0]) for x in pairs])), file=f)
+        print("        for(unsigned int i = 0; i < %s; i += get_local_size(0)){" % (ts[tid]), file=f)
+        print("            barrier(CLK_LOCAL_MEM_FENCE);", file=f)
+        print("            if(i + get_local_id(0) < %s) {" % (ts[tid]), file=f)
+        for cid, cols in enumerate(tab.columns):
+            print("                cache_c%s[get_local_id(0)] = c%s[i+get_local_id(0)];" % (cid,cid), file=f)
+        print("            }", file=f)
+        print("            barrier(CLK_LOCAL_MEM_FENCE);", file=f)
+        print("            if(get_global_id(0)+offset >= skn) continue;", file=f)
+        print("            for(unsigned int j = 0; j < get_local_size(0) && i+j < %s; j++){" % ts[tid], file=f)
+        print("                counter += %s * %s;" % (" * ".join(["ech3(cache_c%s[j],my_c%s_ls,my_c%s_ss)" % (x,x,x) for x in icols[tid]])," * ".join(["ech3(cache_c%s[j],my_j%s_ls,my_j%s_ss)" % (x[1][1],x[0],x[0]) for x in pairs])), file=f)
+        print("            }", file=f)
         print("        }", file=f)
-        print("        sketches[get_global_id(0)+offset] = counter;", file=f)
+        print("        if(get_global_id(0)+offset < skn) sketches[get_global_id(0)+offset] = counter;", file=f)
         print("    }", file=f)    
         print("}", file=f)    
         print(file=f)

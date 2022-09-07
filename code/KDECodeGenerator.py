@@ -404,7 +404,7 @@ int main( int argc, const char* argv[] ){
     
     """ % (len(kernels),1000,"1e-4","1e-3"), file=cf)
             for cid,kernel in enumerate(kernels):
-                print("    p->bw_c%s = bw[%s];" % (cid,cid), file=cf)
+                print("    p.bw_c%s = bw[%s];" % (cid,cid), file=cf)
 
     
             #for cid,col in enumerate(kernels):
@@ -592,17 +592,7 @@ def generateGPUKDEObjectiveGrad(f,query,estimator,kernels):
         print("    if(grad != NULL) grad[%s] = 0.0;" % (cid), file=f)
     print("    double objective = 0.0;", file=f)
     print("    double est = 0.0;", file=f)
-    print("    int first = 1;", file=f)
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.training, file=f)
-    print("       if(first ", end=' ', file=f)
-    for cid,kernel in enumerate(kernels):
-        if kernel == "GaussRange":
-            print("|| p->training_u_c%s[i] != p->training_u_c%s[i-1]" % (cid,cid), end=' ', file=f)
-            print("|| p->training_l_c%s[i] != p->training_l_c%s[i-1]" % (cid,cid), end=' ', file=f)
-        else:
-            print("|| p->training_p_c%s[i] != p->training_p_c%s[i-1]" % (cid,cid), end=' ', file=f)
-    print("){", file=f)
-    print("            first = 0;", file=f)
     print("            est =  est_grad(p, tmp_grad ", end=' ', file=f)
     for cid,kernel in enumerate(kernels):
         if kernel == "GaussRange":
@@ -610,7 +600,6 @@ def generateGPUKDEObjectiveGrad(f,query,estimator,kernels):
         else:
             print(", p->training_p_c%s[i] " % (cid), end=' ', file=f)
     print(");", file=f)
-    print("        }", file=f)
     print("        unsigned int trues =  p->training_cardinality[i];", file=f)
 
     if estimator.objective == "squared":
@@ -650,17 +639,7 @@ def generateGPUKDEObjective(f,query,estimator,kernels):
         raise Exception("I don't know this objective function.")
 
     print("    double est = 0.0;", file=f)
-    print("    int first = 1;", file=f)
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.training, file=f)
-    print("       if(first ", end=' ', file=f)
-    for cid,kernel in enumerate(kernels):
-        if kernel == "GaussRange":
-            print("|| p->training_u_c%s[i] != p->training_u_c%s[i-1]" % (cid,cid), end=' ', file=f)
-            print("|| p->training_l_c%s[i] != p->training_l_c%s[i-1]" % (cid,cid), end=' ', file=f)
-        else:
-            print("|| p->training_p_c%s[i] != p->training_p_c%s[i-1]" % (cid,cid), end=' ', file=f)
-    print("){", file=f)
-    print("            first = 0;", file=f)
     print("            est =  join_estimate_instance(p ", end=' ', file=f)
     for cid,kernel in enumerate(kernels):
         if kernel == "GaussRange":
@@ -668,7 +647,6 @@ def generateGPUKDEObjective(f,query,estimator,kernels):
         else:
             print(", p->training_p_c%s[i] " % (cid), end=' ', file=f)
     print(");", file=f)
-    print("        }", file=f)
     print("        unsigned int trues =  p->training_cardinality[i];", file=f)
 
     if estimator.objective == "squared":
@@ -692,28 +670,8 @@ def generateGPUJKDETestWrapper(f,query,estimator):
     print("    double objective = 0.0;", file=f)
     print("    double trues = 0.0;", file=f) 
     print("    double est = 0.0;", file=f) 
-    print("    int first = 1;", file=f)     
-
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.test, file=f)
     print("        auto begin = std::chrono::high_resolution_clock::now();", file=f)
-    print("        if(first ", end=' ', file=f)
-    for i,indices in enumerate(cols):
-    #Start with computing the invariant contributions   
-        if len(indices) != 0:
-            for j in indices:
-                if query.tables[i].columns[j].type == "range":
-                    print("|| p->j_l_t%s_c%s[i] != p->j_l_t%s_c%s[i-1]" % (i,j,i,j), end=' ', file=f)
-                    print("|| p->j_u_t%s_c%s[i] != p->j_u_t%s_c%s[i-1]" % (i,j,i,j), end=' ', file=f)
-                elif query.tables[i].columns[j].type == "point":
-                    print("|| p->j_p_t%s_c%s[i] != p->j_p_t%s_c%s[i-1] " % (i,j,i,j), end=' ', file=f)
-                else:
-                    raise Exception("Unknown ctype.")
-    print("){", file=f)
-    if hasattr(estimator, 'look_behind'):
-        if estimator.look_behind:
-            print("            first = 0;", file=f)
-    else:
-        print("            first = 0;", file=f)
     print("            est = join_estimate_instance(p", end=' ', file=f)                                                       
     for i,indices in enumerate(cols):
     #Start with computing the invariant contributions   
@@ -727,7 +685,6 @@ def generateGPUJKDETestWrapper(f,query,estimator):
                 else:
                     raise Exception("Unknown ctype.")
     print(");", file=f)
-    print("        }", file=f)
     print("        auto end = std::chrono::high_resolution_clock::now();", file=f)
     print("        trues = p->j_test_cardinality[i];", file=f)    
     print("        objective += (est-trues)*(est-trues);", file=f) 
@@ -740,24 +697,8 @@ def generateGPUKDETestWrapper(f,query,estimator,kernels):
     print("double join_test(parameters* p){", file=f)    
     print("    double objective = 0.0;", file=f)
     print("    double est = 0.0;", file=f)
-    print("    int first = 1;", file=f)
-
     print("    for(unsigned int i = 0; i < %s; i++){" % estimator.test, file=f)
     print("       auto begin = std::chrono::high_resolution_clock::now();", file=f)
-    print("        if(first ", end=' ', file=f)
-
-    for cid, kernel in enumerate(kernels):
-        if kernel == "GaussRange":
-            print("|| p->test_l_c%s[i] != p->test_l_c%s[i-1] " % (cid,cid), end=' ', file=f)
-            print("|| p->test_u_c%s[i] != p->test_u_c%s[i-1] " % (cid,cid), end=' ', file=f)
-        else:
-            print("|| p->test_p_c%s[i] != p->test_p_c%s[i-1] " % (cid,cid), end=' ', file=f)
-    print("){", file=f)
-    if hasattr(estimator, 'look_behind'):
-        if estimator.look_behind:
-            print("            first = 0;", file=f)
-    else:
-        print("            first = 0;", file=f)
     print("            est = join_estimate_instance(p", end=' ', file=f)
                                                             
     for cid, kernel in enumerate(kernels):
@@ -767,7 +708,6 @@ def generateGPUKDETestWrapper(f,query,estimator,kernels):
         else:
             print(", p->test_p_c%s[i]" % (cid), end=' ', file=f) 
     print(");", file=f)
-    print("        }", file=f)
     print("        auto end = std::chrono::high_resolution_clock::now();", file=f)
     print("        double trues = p->test_cardinality[i];", file=f)     
     print("        objective += (est-trues)*(est-trues);", file=f)
