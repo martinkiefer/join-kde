@@ -2,7 +2,7 @@ import os
 
 #Load individual 
 d = '.'
-dirs =  filter(lambda x: os.path.isdir(os.path.join(d, x)), os.listdir(d))
+dirs =  [x for x in os.listdir(d) if os.path.isdir(os.path.join(d, x))]
 
 for dir in dirs:
     #Grab the common header
