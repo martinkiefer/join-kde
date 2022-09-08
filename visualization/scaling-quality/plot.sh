@@ -4,7 +4,7 @@ do
     for rf in ${dir}code/*.results
     do
         echo $rf
-        python2 groupBy.py $rf > $rf.group.results
+        python groupBy.py $rf > $rf.group.results
     done 
 done
 

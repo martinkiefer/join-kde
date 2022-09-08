@@ -1,4 +1,4 @@
-python2 plot.py
+python plot.py
 
 for dir in ./*/
 do  
