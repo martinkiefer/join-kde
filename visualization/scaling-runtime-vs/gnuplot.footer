@@ -1,0 +1,5 @@
+plot \
+'./cpucode/0_AGPUJKDE.results.group.results' using 1:($9/1000000) title 'TS+KDE (CPU)' ls 1 lc 'blue',\
+'./cpucode/1_GPUKDE.results.group.results' using 1:($9/1000000) title 'JS+KDE (CPU)' ls 8 lc 'blue', \
+'./code/0_AGPUJKDE.results.group.results' using 1:($9/1000000) title 'TS+KDE (GPU)' ls 1 lc 'green', \
+'./code/1_GPUKDE.results.group.results' using 1:($9/1000000) title 'JS+KDE (GPU)' ls 8 lc 'green'
