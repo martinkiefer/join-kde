@@ -33,6 +33,7 @@ int range_ech3(unsigned int u, unsigned int l, unsigned int seed, unsigned int s
         l = ut;
     }
     return ctr;
+}
     """, file=f)
     
 def generateCIncludes(f):
